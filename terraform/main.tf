@@ -48,6 +48,52 @@ resource "aws_security_group" "app" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  # Allow Node Exporter scraping from monitoring instance
+  ingress {
+    from_port   = 9100
+    to_port     = 9100
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# Security group for monitoring instance
+resource "aws_security_group" "monitoring" {
+  name        = "bankingapp-monitoring-sg"
+  description = "Allow access to monitoring services"
+  vpc_id      = var.vpc_id
+
+  # Prometheus
+  ingress {
+    from_port   = 9090
+    to_port     = 9090
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Alertmanager
+  ingress {
+    from_port   = 9093
+    to_port     = 9093
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Grafana
+  ingress {
+    from_port   = 3000
+    to_port     = 3000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -191,7 +237,7 @@ resource "aws_instance" "monitoring" {
   ami                         = var.monitoring_ami_id
   instance_type               = var.monitoring_instance_type
   subnet_id                   = var.subnet_ids[0]
-  vpc_security_group_ids      = [aws_security_group.app.id]
+  vpc_security_group_ids      = [aws_security_group.monitoring.id]
   associate_public_ip_address = true
 
   tags = {

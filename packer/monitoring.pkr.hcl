@@ -21,6 +21,11 @@ source "amazon-ebs" "monitoring" {
     Name    = "bankingapp-monitoring"
     Project = "BankingApp"
   }
+  
+  # Security group for the temporary instance
+  security_group_filter {
+    source_group_name = "default"
+  }
 }
 
 build {

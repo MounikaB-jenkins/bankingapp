@@ -17,3 +17,24 @@ output "monitoring_public_ip" {
   description = "Public IP of the monitoring instance"
   value       = aws_instance.monitoring.public_ip
 }
+
+# Monitoring service URLs
+output "prometheus_url" {
+  description = "URL to access Prometheus"
+  value       = "http://${aws_instance.monitoring.public_ip}:9090"
+}
+
+output "grafana_url" {
+  description = "URL to access Grafana (default creds: admin/admin)"
+  value       = "http://${aws_instance.monitoring.public_ip}:3000"
+}
+
+output "alertmanager_url" {
+  description = "URL to access Alertmanager"
+  value       = "http://${aws_instance.monitoring.public_ip}:9093"
+}
+
+output "node_exporter_port" {
+  description = "Node Exporter port for metrics scraping"
+  value       = 9100
+}

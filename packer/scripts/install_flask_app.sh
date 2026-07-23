@@ -21,6 +21,28 @@ sudo python3 -m pip install --upgrade pip || true
 sudo python3 -m pip install "Flask==2.3.3" || true
 sudo python3 -m pip install prometheus-client==0.20.0 boto3==1.35.4 psycopg2-binary==2.9.2 || true
 
+# Install Node Exporter for metrics scraping
+cd /tmp
+wget -q https://github.com/prometheus/node_exporter/releases/download/v1.6.1/node_exporter-1.6.1.linux-amd64.tar.gz -O node_exporter.tar.gz || true
+sudo tar -xzf node_exporter.tar.gz -C /usr/local || true
+sudo mv /usr/local/node_exporter-1.6.1.linux-amd64/node_exporter /usr/local/bin/node_exporter || true
+sudo chmod +x /usr/local/bin/node_exporter || true
+
+# Create Node Exporter systemd service
+sudo tee /etc/systemd/system/node_exporter.service >/dev/null <<'EOF'
+[Unit]
+Description=Node Exporter
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/node_exporter
+Restart=always
+User=ec2-user
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
 # Create app directory
 sudo mkdir -p /opt/bankingapp
 sudo cp -r /tmp/bankingapp-app /opt/bankingapp/app
@@ -42,7 +64,8 @@ User=ec2-user
 WantedBy=multi-user.target
 EOF
 
-# Enable nginx
+# Enable services
 sudo systemctl daemon-reload
 sudo systemctl enable bankingapp.service
 sudo systemctl enable nginx1
+sudo systemctl enable node_exporter
