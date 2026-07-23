@@ -107,7 +107,7 @@ resource "aws_db_instance" "postgres" {
   password               = random_password.db_password.result
   publicly_accessible    = false
   skip_final_snapshot    = true
-  backup_retention_period = 7
+  backup_retention_period = 1  # Changed from 7 to 1 for AWS Free Tier compatibility
   storage_encrypted      = true
   vpc_security_group_ids = [aws_security_group.db.id]
   db_subnet_group_name   = aws_db_subnet_group.default.name
