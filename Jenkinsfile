@@ -61,7 +61,6 @@ pipeline {
       steps {
         sh '''
           set -e
-          cd BankingApp
           python3 -m venv .venv
           . .venv/bin/activate
           pip install -r app/requirements.txt pytest
@@ -74,7 +73,7 @@ pipeline {
       steps {
         sh '''
           set -e
-          cd BankingApp/packer
+          cd packer
           packer init flask-app.pkr.hcl
           packer build -var "region=${AWS_REGION}" flask-app.pkr.hcl
           packer init monitoring.pkr.hcl
@@ -87,7 +86,7 @@ pipeline {
       steps {
         sh '''
           set -e
-          cd BankingApp/terraform
+          cd terraform
           terraform init
           terraform apply -auto-approve -var "region=${AWS_REGION}" -var "vpc_id=vpc-088237085ff583c8e" -var "subnet_ids=[\"subnet-0e2b2454962fb5acf\"]"
         '''
