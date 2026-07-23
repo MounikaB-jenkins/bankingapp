@@ -145,7 +145,7 @@ resource "aws_secretsmanager_secret_version" "db_credentials" {
 resource "aws_db_instance" "postgres" {
   identifier             = "bankingapp-postgres"
   engine                 = "postgres"
-  engine_version         = "15.4"  # Changed from 16.3 (not available) to 15.4 (available in eu-central-1)
+  engine_version         = "15.3"  # Changed from 15.4 to 15.3 (15.4 not available in eu-central-1)
   instance_class         = "db.t3.micro"
   allocated_storage      = 20
   db_name                = var.db_name
