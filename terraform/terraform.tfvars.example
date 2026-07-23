@@ -1,0 +1,5 @@
+region = "ap-south-2"
+vpc_id = "vpc-088237085ff583c8e"
+subnet_ids = ["subnet-0e2b2454962fb5acf"]
+flask_ami_id = "ami-xxxxxxxxxxxxxxxxx"
+monitoring_ami_id = "ami-yyyyyyyyyyyyyyyy"
