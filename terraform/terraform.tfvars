@@ -1,13 +1,11 @@
 # AWS Region
 region = "eu-central-1"
 
-# VPC Configuration - REPLACE THESE VALUES WITH YOUR ACTUAL AWS RESOURCES IN eu-central-1
-# Run: aws ec2 describe-vpcs --region eu-central-1
-vpc_id = "vpc-xxxxxxxxxxxxxxxxx"  # REPLACE: Your VPC ID from AWS Console
+# VPC Configuration
+vpc_id = "vpc-02b2d5872e4eaa025"
 
-# Subnet IDs - REPLACE THESE WITH YOUR ACTUAL SUBNET IDs FROM eu-central-1
-# Run: aws ec2 describe-subnets --region eu-central-1
-subnet_ids = ["subnet-xxxxxxxxxxxxxxxxx", "subnet-yyyyyyyyyyyyyyyyy"]
+# Subnet IDs
+subnet_ids = ["subnet-03f9f842b9a125975", "subnet-02c1f0c7939d0978c"]
 
 # AMI IDs (will be auto-populated by Jenkins pipeline after Packer build)
 flask_ami_id = ""
