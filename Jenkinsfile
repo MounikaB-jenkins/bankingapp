@@ -16,13 +16,42 @@ pipeline {
     stage('Prepare Environment') {
       steps {
         sh '''
-          set -e
-          sudo apt-get update -y
-          sudo apt-get install -y unzip curl python3 python3-pip
-          curl -fsSL https://releases.hashicorp.com/terraform/1.8.5/terraform_1.8.5_linux_amd64.zip -o /tmp/terraform.zip
-          unzip -o /tmp/terraform.zip -d /usr/local/bin
-          curl -fsSL https://releases.hashicorp.com/packer/1.11.2/packer_1.11.2_linux_amd64.zip -o /tmp/packer.zip
-          unzip -o /tmp/packer.zip -d /usr/local/bin
+          set -euo pipefail
+          export DEBIAN_FRONTEND=noninteractive
+          export PATH="$HOME/bin:$PATH"
+
+          if [ "$(id -u)" -eq 0 ]; then
+            SUDO=""
+          elif command -v sudo >/dev/null 2>&1 && sudo -n true >/dev/null 2>&1; then
+            SUDO="sudo"
+          else
+            SUDO=""
+          fi
+
+          if command -v apt-get >/dev/null 2>&1; then
+            if [ -n "$SUDO" ]; then
+              "$SUDO" apt-get update -y
+              "$SUDO" apt-get install -y unzip curl python3 python3-pip python3-venv
+            else
+              apt-get update -y
+              apt-get install -y unzip curl python3 python3-pip python3-venv
+            fi
+          fi
+
+          mkdir -p "$HOME/bin"
+
+          if ! command -v terraform >/dev/null 2>&1; then
+            curl -fsSL https://releases.hashicorp.com/terraform/1.8.5/terraform_1.8.5_linux_amd64.zip -o /tmp/terraform.zip
+            unzip -o /tmp/terraform.zip -d "$HOME/bin"
+            chmod +x "$HOME/bin/terraform"
+          fi
+
+          if ! command -v packer >/dev/null 2>&1; then
+            curl -fsSL https://releases.hashicorp.com/packer/1.11.2/packer_1.11.2_linux_amd64.zip -o /tmp/packer.zip
+            unzip -o /tmp/packer.zip -d "$HOME/bin"
+            chmod +x "$HOME/bin/packer"
+          fi
+
           python3 -m pip install --upgrade pip
         '''
       }
