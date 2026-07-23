@@ -21,11 +21,6 @@ source "amazon-ebs" "flask" {
     Name    = "bankingapp-flask"
     Project = "BankingApp"
   }
-  
-  # Security group for the temporary instance to allow Node Exporter scraping
-  security_group_filter {
-    source_group_name = "default"
-  }
 }
 
 build {
