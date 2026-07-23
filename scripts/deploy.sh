@@ -18,6 +18,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install --upgrade pip
 pip install -r app/requirements.txt pytest
+export PYTHONPATH=$PYTHONPATH:$(pwd)
 pytest -q app/tests
 
 cd packer
@@ -28,4 +29,4 @@ packer build -var "region=${AWS_REGION:-eu-central-1}" monitoring.pkr.hcl
 
 cd ../terraform
 terraform init
-terraform apply -auto-approve -var "region=${AWS_REGION:-ap-south-2}" -var-file=terraform.tfvars
+terraform apply -auto-approve -var "region=${AWS_REGION:-eu-central-1}" -var-file=terraform.tfvars

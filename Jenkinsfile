@@ -66,7 +66,7 @@ pipeline {
           python3 -m venv .venv
           . .venv/bin/activate
           pip install -r app/requirements.txt pytest
-          export PYTHONPATH=$PYTHONPATH:.
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
           pytest -q app/tests
         '''
       }
