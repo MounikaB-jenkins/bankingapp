@@ -53,4 +53,3 @@ EOF
 
 sudo systemctl daemon-reload
 sudo systemctl enable prometheus.service grafana.service
-sudo systemctl start prometheus.service grafana.service

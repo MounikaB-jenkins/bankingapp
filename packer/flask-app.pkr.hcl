@@ -1,6 +1,6 @@
 variable "region" {
   type    = string
-  default = "ap-south-2"
+  default = "ap-south-1"
 }
 
 source "amazon-ebs" "flask" {
@@ -9,7 +9,7 @@ source "amazon-ebs" "flask" {
   region        = var.region
   source_ami_filter {
     filters = {
-      name                = "al2023-ami-2023.*-x86_64"
+      name                = "amzn2-ami-hvm-*-x86_64-gp2"
       root-device-type    = "ebs"
       virtualization-type = "hvm"
     }

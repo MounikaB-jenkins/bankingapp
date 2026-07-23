@@ -26,6 +26,4 @@ EOF
 
 sudo systemctl daemon-reload
 sudo systemctl enable bankingapp.service
-sudo systemctl start bankingapp.service
 sudo systemctl enable nginx
-sudo systemctl start nginx

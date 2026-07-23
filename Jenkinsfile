@@ -2,8 +2,10 @@ pipeline {
   agent any
 
   environment {
-    AWS_REGION = 'ap-south-2'
-    AWS_DEFAULT_REGION = 'ap-south-2'
+    AWS_REGION = 'ap-south-1'
+    AWS_DEFAULT_REGION = 'ap-south-1'
+    AWS_ACCESS_KEY_ID = credentials('aws-access-key-id')
+    AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')
   }
 
   stages {
@@ -76,9 +78,31 @@ pipeline {
           set -e
           cd packer
           packer init flask-app.pkr.hcl
-          packer build -var "region=${AWS_REGION}" flask-app.pkr.hcl
+          packer build -var "region=${AWS_REGION}" flask-app.pkr.hcl | tee flask-build.log
           packer init monitoring.pkr.hcl
-          packer build -var "region=${AWS_REGION}" monitoring.pkr.hcl
+          packer build -var "region=${AWS_REGION}" monitoring.pkr.hcl | tee monitoring-build.log
+        '''
+      }
+    }
+
+    stage('Extract AMI IDs') {
+      steps {
+        sh '''
+          set -e
+          cd packer
+          FLASK_AMI=$(grep -o "ami-[a-z0-9]\{17\}" flask-build.log | head -1)
+          MONITORING_AMI=$(grep -o "ami-[a-z0-9]\{17\}" monitoring-build.log | head -1)
+          
+          if [ -z "$FLASK_AMI" ] || [ -z "$MONITORING_AMI" ]; then
+            echo "ERROR: Could not extract AMI IDs from Packer output"
+            exit 1
+          fi
+          
+          echo "FLASK_AMI=$FLASK_AMI" > ../ami_ids.env
+          echo "MONITORING_AMI=$MONITORING_AMI" >> ../ami_ids.env
+          echo "Extracted AMI IDs:"
+          echo "  Flask AMI: $FLASK_AMI"
+          echo "  Monitoring AMI: $MONITORING_AMI"
         '''
       }
     }
@@ -89,7 +113,11 @@ pipeline {
           set -e
           cd terraform
           terraform init
-          terraform apply -auto-approve -var "region=${AWS_REGION}" -var "vpc_id=vpc-088237085ff583c8e" -var "subnet_ids=[\"subnet-0e2b2454962fb5acf\"]"
+          source ../ami_ids.env
+          terraform apply -auto-approve \
+            -var "region=${AWS_REGION}" \
+            -var "flask_ami_id=$FLASK_AMI" \
+            -var "monitoring_ami_id=$MONITORING_AMI"
         '''
       }
     }

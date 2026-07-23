@@ -1,7 +1,7 @@
 variable "region" {
   description = "AWS region"
   type        = string
-  default     = "ap-south-2"
+  default     = "ap-south-1"
 }
 
 variable "vpc_id" {

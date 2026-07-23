@@ -22,9 +22,9 @@ pytest -q app/tests
 
 cd packer
 packer init flask-app.pkr.hcl
-packer build -var "region=${AWS_REGION:-ap-south-2}" flask-app.pkr.hcl
+packer build -var "region=${AWS_REGION:-ap-south-1}" flask-app.pkr.hcl
 packer init monitoring.pkr.hcl
-packer build -var "region=${AWS_REGION:-ap-south-2}" monitoring.pkr.hcl
+packer build -var "region=${AWS_REGION:-ap-south-1}" monitoring.pkr.hcl
 
 cd ../terraform
 terraform init
