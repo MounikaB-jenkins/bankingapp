@@ -1,5 +1,5 @@
 # AWS Region
-region = "ap-south-1"
+region = "eu-central-1"
 
 # VPC Configuration
 vpc_id = "REPLACE_WITH_YOUR_VPC_ID"

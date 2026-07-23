@@ -1,6 +1,6 @@
 variable "region" {
   type    = string
-  default = "ap-south-1"
+  default = "eu-central-1"
 }
 
 source "amazon-ebs" "flask" {
