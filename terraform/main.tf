@@ -19,7 +19,7 @@ provider "aws" {
 resource "random_password" "db_password" {
   length           = 24
   special          = true
-  override_special = "!@#%^*()-_"
+  override_special = "!#%^*-_"  # Removed @ which is not allowed by RDS
 }
 
 resource "aws_security_group" "app" {
