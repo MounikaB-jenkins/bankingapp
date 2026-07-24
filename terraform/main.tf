@@ -70,6 +70,14 @@ resource "aws_security_group" "monitoring" {
   description = "Allow access to monitoring services"
   vpc_id      = var.vpc_id
 
+  # SSH
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   # Prometheus
   ingress {
     from_port   = 9090
