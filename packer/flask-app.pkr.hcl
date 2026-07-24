@@ -33,5 +33,6 @@ build {
 
   provisioner "shell" {
     script = "./scripts/install_flask_app.sh"
+    execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
   }
 }

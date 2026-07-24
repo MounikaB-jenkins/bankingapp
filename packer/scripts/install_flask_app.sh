@@ -1,32 +1,29 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Use yum for Amazon Linux 2 (more reliable than dnf)
+# Use yum for Amazon Linux 2
 sudo yum update -y || true
 
 # Install nginx from Amazon Linux Extras
 sudo amazon-linux-extras install nginx1 -y || true
 
-# Install PostgreSQL from default repos (postgresql15 not available in AL2)
+# Install PostgreSQL client
 sudo yum install -y postgresql || true
 
-# Install other dependencies
+# Install Python and dependencies
 sudo yum install -y python3 python3-pip git awscli || true
-
-# Upgrade pip
 sudo python3 -m pip install --upgrade pip || true
 
-# Install Flask with compatible version for Python 3.7
-# Flask 3.0.3 requires Python 3.8+, so we use Flask 2.3.3 which supports Python 3.7
+# Install Flask with Python 3.7 compatible version
 sudo python3 -m pip install "Flask==2.3.3" || true
 sudo python3 -m pip install prometheus-client==0.20.0 boto3==1.35.4 psycopg2-binary==2.9.2 || true
 
 # Install Node Exporter for metrics scraping
 cd /tmp
-wget -q https://github.com/prometheus/node_exporter/releases/download/v1.6.1/node_exporter-1.6.1.linux-amd64.tar.gz -O node_exporter.tar.gz || true
-sudo tar -xzf node_exporter.tar.gz -C /usr/local || true
-sudo mv /usr/local/node_exporter-1.6.1.linux-amd64/node_exporter /usr/local/bin/node_exporter || true
-sudo chmod +x /usr/local/bin/node_exporter || true
+wget -q https://github.com/prometheus/node_exporter/releases/download/v1.6.1/node_exporter-1.6.1.linux-amd64.tar.gz -O node_exporter.tar.gz || { echo "Node Exporter download failed"; exit 1; }
+sudo tar -xzf node_exporter.tar.gz -C /usr/local || { echo "Node Exporter extract failed"; exit 1; }
+sudo mv /usr/local/node_exporter-*/node_exporter /usr/local/bin/node_exporter || { echo "Node Exporter move failed"; exit 1; }
+sudo chmod +x /usr/local/bin/node_exporter || { echo "Node Exporter chmod failed"; exit 1; }
 
 # Create Node Exporter systemd service
 sudo tee /etc/systemd/system/node_exporter.service >/dev/null <<'EOF'
@@ -47,7 +44,7 @@ EOF
 sudo mkdir -p /opt/bankingapp
 sudo cp -r /tmp/bankingapp-app /opt/bankingapp/app
 
-# Create systemd service
+# Create Flask app systemd service
 sudo tee /etc/systemd/system/bankingapp.service >/dev/null <<'EOF'
 [Unit]
 Description=BankingApp Flask service
@@ -64,8 +61,14 @@ User=ec2-user
 WantedBy=multi-user.target
 EOF
 
-# Enable services
+# Enable and START all services
 sudo systemctl daemon-reload
 sudo systemctl enable bankingapp.service
 sudo systemctl enable nginx1
 sudo systemctl enable node_exporter
+
+sudo systemctl start bankingapp.service
+sudo systemctl start nginx1
+sudo systemctl start node_exporter
+
+echo "=== Flask App Services Started ==="

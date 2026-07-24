@@ -28,5 +28,6 @@ build {
 
   provisioner "shell" {
     script = "./scripts/install_monitoring.sh"
+    execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
   }
 }
