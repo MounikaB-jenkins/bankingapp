@@ -15,8 +15,8 @@ sudo yum install -y python3 python3-pip git awscli || true
 sudo python3 -m pip install --upgrade pip || true
 
 # Install Flask with Python 3.7 compatible version
-sudo python3 -m pip install "Flask==2.3.3" || true
-sudo python3 -m pip install prometheus-client==0.20.0 boto3==1.35.4 psycopg2-binary==2.9.2 || true
+sudo python3 -m pip install "Flask==2.3.3"
+sudo python3 -m pip install prometheus-client==0.20.0 boto3==1.35.4 psycopg2-binary
 
 # Install Node Exporter for metrics scraping
 cd /tmp

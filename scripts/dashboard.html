@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - BankingApp</title>
+    <style>
+        body { font-family: sans-serif; margin: 2em; }
+        .container { max-width: 800px; margin: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2em; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 0.8em; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Welcome, {{ customer.name }}</h1>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+
+        <h2>Your Details</h2>
+        <p><strong>Name:</strong> {{ customer.name }}</p>
+        <p><strong>Email:</strong> {{ customer.email }}</p>
+
+        <h2>Your Accounts</h2>
+        {% if accounts %}
+            <table>
+                <thead>
+                    <tr><th>Account Number</th><th>Balance</th></tr>
+                </thead>
+                <tbody>
+                {% for account in accounts %}
+                    <tr><td>{{ account.account_number }}</td><td>${{ "%.2f"|format(account.balance) }}</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>You have no accounts.</p>
+        {% endif %}
+    </div>
+</body>
+</html>
