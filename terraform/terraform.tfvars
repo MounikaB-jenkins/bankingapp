@@ -1,3 +1,6 @@
+# Trusted IP for SSH and monitoring access
+trusted_ip_cidr = "94.225.101.180/32"
+
 # AWS Region
 region = "eu-central-1"
 

@@ -7,3 +7,4 @@ prometheus-client==0.17.1
 # boto3 1.34.0+ requires Python 3.8+
 boto3==1.33.13
 psycopg2-binary==2.9.2
+gunicorn==20.1.0

@@ -1,3 +1,9 @@
+variable "trusted_ip_cidr" {
+  description = "CIDR block for trusted IP addresses to allow SSH and monitoring access. Set this to your public IP address."
+  type        = string
+  default     = "0.0.0.0/0" # WARNING: This is insecure. Replace with your IP, e.g., "your_ip/32"
+}
+
 variable "region" {
   description = "AWS region"
   type        = string

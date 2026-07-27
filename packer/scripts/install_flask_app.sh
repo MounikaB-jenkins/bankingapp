@@ -47,6 +47,24 @@ EOF
 sudo mkdir -p /opt/bankingapp
 sudo cp -r /tmp/bankingapp-app /opt/bankingapp/app
 
+# Create Nginx reverse proxy configuration
+sudo tee /etc/nginx/conf.d/bankingapp.conf >/dev/null <<'EOF'
+server {
+    listen 8080;
+    server_name _;
+
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+EOF
+# Remove default Nginx config to avoid port 80 conflicts if any
+sudo rm -f /etc/nginx/conf.d/default.conf /etc/nginx/sites-enabled/default
+
 # Create Flask app systemd service
 sudo tee /etc/systemd/system/bankingapp.service >/dev/null <<'EOF'
 [Unit]
@@ -56,7 +74,7 @@ After=network.target
 [Service]
 WorkingDirectory=/opt/bankingapp/app
 Environment=ENVIRONMENT=prod
-ExecStart=/usr/bin/python3 /opt/bankingapp/app/app.py
+ExecStart=/usr/local/bin/gunicorn --workers 3 --bind 127.0.0.1:8000 app:app
 Restart=always
 User=ec2-user
 
