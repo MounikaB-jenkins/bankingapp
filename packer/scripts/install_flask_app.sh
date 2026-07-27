@@ -2,16 +2,16 @@
 set -euo pipefail
 
 # Use yum for Amazon Linux 2
-sudo dnf update -y
+sudo yum update -y
 
 # Install nginx from Amazon Linux Extras
-sudo dnf install -y nginx
+sudo amazon-linux-extras install nginx1 -y
 
 # Install PostgreSQL client
-sudo dnf install -y postgresql15
+sudo yum install -y postgresql
 
 # Install Python and dependencies
-sudo dnf install -y python3 python3-pip git aws-cli
+sudo yum install -y python3 python3-pip git awscli
 sudo python3 -m pip install --upgrade pip
 
 # Install Python dependencies from requirements.txt
@@ -64,11 +64,11 @@ EOF
 # Enable and START all services
 sudo systemctl daemon-reload
 sudo systemctl enable bankingapp.service
-sudo systemctl enable nginx
+sudo systemctl enable nginx1
 sudo systemctl enable node_exporter
 
 sudo systemctl start bankingapp.service
-sudo systemctl start nginx
+sudo systemctl start nginx1
 sudo systemctl start node_exporter
 
 echo "=== Flask App Services Started ==="
