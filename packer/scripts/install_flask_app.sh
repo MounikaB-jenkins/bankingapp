@@ -64,11 +64,11 @@ EOF
 # Enable and START all services
 sudo systemctl daemon-reload
 sudo systemctl enable bankingapp.service
-sudo systemctl enable nginx1
+sudo systemctl enable nginx
 sudo systemctl enable node_exporter
 
 sudo systemctl start bankingapp.service
-sudo systemctl start nginx1
+sudo systemctl start nginx
 sudo systemctl start node_exporter
 
 echo "=== Flask App Services Started ==="
