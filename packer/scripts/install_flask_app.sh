@@ -1,19 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Stop yum-cron to prevent conflicts with yum, if it exists.
-sudo systemctl stop yum-cron || true
+# Disable and stop yum-cron to prevent conflicts.
+sudo systemctl disable yum-cron.service || true
+sudo systemctl stop yum-cron.service || true
 
 # Wait for any existing yum lock to be released.
 while sudo fuser /var/run/yum.pid >/dev/null 2>&1; do
-    echo "Waiting for other yum process to finish..."
+    echo "Waiting for other yum process to release the lock..."
     sleep 5
 done
 
-# Install all dependencies in a single transaction
+# Update packages and install all dependencies in a single transaction
+sudo yum update -y
 sudo amazon-linux-extras install nginx1 -y
-sudo yum update -y # Update packages
-sudo yum install -y postgresql python3 python3-pip git awscli # Install other dependencies
+sudo yum install -y postgresql python3-pip git awscli
 sudo python3 -m pip install --upgrade pip
 
 # Install Python dependencies from requirements.txt
