@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Disable and stop yum-cron to prevent conflicts.
-sudo systemctl disable yum-cron.service || true
-sudo systemctl stop yum-cron.service || true
+# Aggressively stop and disable automatic updates to prevent yum lock conflicts.
+# The service might not exist, so we use '|| true' to prevent script failure.
+sudo systemctl stop yum-cron || true
+sudo systemctl disable yum-cron || true
 
-# Wait for any existing yum lock to be released.
-while sudo fuser /var/run/yum.pid >/dev/null 2>&1; do
-    echo "Waiting for other yum process to release the lock..."
-    sleep 5
-done
+# Kill any lingering yum process and remove the lock file to take control.
+echo "Forcefully stopping any existing yum processes..."
+sudo pkill -f yum || true
+sudo rm -f /var/run/yum.pid
 
 # Update packages and install all dependencies in a single transaction
 sudo yum update -y
@@ -67,6 +67,12 @@ EOF
 # Enable and START all services
 sudo systemctl daemon-reload
 sudo systemctl enable bankingapp.service
+
+# Verify nginx installed correctly before trying to enable it
+if ! sudo systemctl list-unit-files | grep -q '^nginx.service'; then
+    echo "ERROR: nginx.service not found. The 'amazon-linux-extras install nginx1' command may have failed." >&2
+    exit 1
+fi
 sudo systemctl enable nginx
 sudo systemctl enable node_exporter
 
