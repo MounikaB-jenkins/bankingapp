@@ -13,7 +13,8 @@ def test_health_endpoint():
 
 
 def test_root_endpoint():
+    """When not logged in, the root should redirect to the login page."""
     client = app.test_client()
     response = client.get("/")
-    assert response.status_code == 200
-    assert response.get_json()["service"] == "BankingApp"
+    assert response.status_code == 302
+    assert "/login" in response.headers["Location"]
