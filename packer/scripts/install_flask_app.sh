@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Stop yum-cron to prevent conflicts with yum.
-sudo systemctl stop yum-cron
+# Stop yum-cron to prevent conflicts with yum, if it exists.
+sudo systemctl stop yum-cron || true
 
 # Wait for any existing yum lock to be released.
 while sudo fuser /var/run/yum.pid >/dev/null 2>&1; do
