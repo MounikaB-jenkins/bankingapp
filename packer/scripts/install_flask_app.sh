@@ -14,9 +14,9 @@ sudo yum install -y postgresql || true
 sudo yum install -y python3 python3-pip git awscli || true
 sudo python3 -m pip install --upgrade pip || true
 
-# Install Flask with Python 3.7 compatible version
-sudo python3 -m pip install "Flask==2.2.5"
-sudo python3 -m pip install prometheus-client==0.20.0 boto3==1.35.4 psycopg2-binary==2.9.2
+# Install Python dependencies from requirements.txt
+sudo cp /tmp/bankingapp-app/requirements.txt /tmp/
+sudo python3 -m pip install -r /tmp/requirements.txt
 
 # Install Node Exporter for metrics scraping
 cd /tmp
