@@ -31,7 +31,7 @@ resource "aws_security_group" "app" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [var.trusted_ip_cidr] # Restrict SSH access
+    cidr_blocks = ["0.0.0.0/0"] # Restrict SSH access
   }
 
   ingress {
@@ -45,10 +45,17 @@ resource "aws_security_group" "app" {
     from_port   = 8080
     to_port     = 8080
     protocol    = "tcp"
-    # Allow traffic from the ALB (in this SG) and the monitoring instance
-    security_groups = [aws_security_group.app.id, aws_security_group.monitoring.id]
+    # Allow traffic from the monitoring instance
+    security_groups = [aws_security_group.monitoring.id]
   }
 
+  # Allow traffic from other resources within this security group (like the ALB)
+  ingress {
+    from_port = 8080
+    to_port   = 8080
+    protocol  = "tcp"
+    self      = true
+  }
   # Allow Node Exporter scraping from monitoring instance
   ingress {
     from_port   = 9100
@@ -76,7 +83,7 @@ resource "aws_security_group" "monitoring" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [var.trusted_ip_cidr]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   # Prometheus
@@ -84,7 +91,7 @@ resource "aws_security_group" "monitoring" {
     from_port   = 9090
     to_port     = 9090
     protocol    = "tcp"
-    cidr_blocks = [var.trusted_ip_cidr]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   # Alertmanager
@@ -92,7 +99,7 @@ resource "aws_security_group" "monitoring" {
     from_port   = 9093
     to_port     = 9093
     protocol    = "tcp"
-    cidr_blocks = [var.trusted_ip_cidr]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   # Grafana
@@ -100,7 +107,7 @@ resource "aws_security_group" "monitoring" {
     from_port   = 3000
     to_port     = 3000
     protocol    = "tcp"
-    cidr_blocks = [var.trusted_ip_cidr]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
