@@ -1,17 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Wait for yum lock to be released by any background processes
+while sudo fuser /var/run/yum.pid >/dev/null 2>&1; do
+    echo "Waiting for other yum process to finish..."
+    sleep 5
+done
+
 # Use yum for Amazon Linux 2
 sudo yum update -y
 
 # Install nginx from Amazon Linux Extras
 sudo amazon-linux-extras install nginx1 -y
 
-# Install PostgreSQL client
-sudo yum install -y postgresql
-
-# Install Python and dependencies
-sudo yum install -y python3 python3-pip git awscli
+# Install dependencies in a single command
+sudo yum install -y postgresql python3 python3-pip git awscli
 sudo python3 -m pip install --upgrade pip
 
 # Install Python dependencies from requirements.txt
