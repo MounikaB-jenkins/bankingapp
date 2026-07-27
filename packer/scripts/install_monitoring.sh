@@ -2,28 +2,27 @@
 set -euo pipefail
 
 # Install dependencies
-sudo yum update -y
-sudo yum install -y wget tar jq
+sudo dnf update -y
+sudo dnf install -y wget tar jq
 
 cd /tmp
 
-# Install Prometheus 3.6.0
-wget https://github.com/prometheus/prometheus/releases/download/v3.6.0/prometheus-3.6.0.linux-amd64.tar.gz
-tar -xzf prometheus-3.6.0.linux-amd64.tar.gz
+# Install Prometheus v3.13.1
+PROM_VERSION="3.13.1"
+wget https://github.com/prometheus/prometheus/releases/download/v${PROM_VERSION}/prometheus-${PROM_VERSION}.linux-amd64.tar.gz
+tar -xvf prometheus-${PROM_VERSION}.linux-amd64.tar.gz
 
 # Create prometheus user
 sudo useradd --no-create-home --shell /usr/sbin/nologin prometheus
 
 # Create directories
-sudo mkdir -p /etc/prometheus
-sudo mkdir -p /var/lib/prometheus
+sudo mkdir -p /etc/prometheus /var/lib/prometheus
 
 # Install Prometheus binaries
-sudo cp prometheus-3.6.0.linux-amd64/prometheus /usr/local/bin/
-sudo cp prometheus-3.6.0.linux-amd64/promtool /usr/local/bin/
-sudo cp prometheus-3.6.0.linux-amd64/prometheus.yml /etc/prometheus/
-sudo cp -r prometheus-3.6.0.linux-amd64/consoles /etc/prometheus/
-sudo cp -r prometheus-3.6.0.linux-amd64/console_libraries /etc/prometheus/
+sudo cp prometheus-${PROM_VERSION}.linux-amd64/prometheus /usr/local/bin/
+sudo cp prometheus-${PROM_VERSION}.linux-amd64/promtool /usr/local/bin/
+sudo cp -r prometheus-${PROM_VERSION}.linux-amd64/consoles /etc/prometheus
+sudo cp -r prometheus-${PROM_VERSION}.linux-amd64/console_libraries /etc/prometheus
 
 # Set permissions
 sudo chown -R prometheus:prometheus /etc/prometheus
@@ -73,12 +72,18 @@ scrape_configs:
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
-
+  
   - job_name: 'node-exporter'
     static_configs:
       - targets: ['localhost:9100']
         labels:
           env: 'monitoring'
+
+  - job_name: "flask-app"
+    metrics_path: /metrics
+    # This will be dynamically discovered via a file_sd_config in a production setup
+    static_configs:
+      - targets: ['<APP_INSTANCE_IP>:8080'] # Placeholder, will need dynamic discovery
 EOF
 
 # Create alert rules
@@ -115,39 +120,24 @@ groups:
       description: "Memory usage on {{ $labels.instance }} is {{ $value }}% for 5 minutes."
 EOF
 
-# Install Grafana
-wget https://dl.grafana.com/oss/release/grafana-10.4.5.linux-amd64.tar.gz
-tar -xzf grafana-10.4.5.linux-amd64.tar.gz
-sudo mv grafana-10.4.5 /opt/grafana
-
-# Create Grafana user and directories
-sudo useradd --no-create-home --shell /usr/sbin/nologin grafana
-sudo mkdir -p /var/lib/grafana
-sudo chown -R grafana:grafana /opt/grafana
-sudo chown -R grafana:grafana /var/lib/grafana
-
-# Create Grafana systemd service
-sudo tee /etc/systemd/system/grafana.service >/dev/null <<'EOF'
-[Unit]
-Description=Grafana
-After=network-online.target
-Wants=network-online.target
-
-[Service]
-User=grafana
-Group=grafana
-Type=simple
-WorkingDirectory=/opt/grafana
-ExecStart=/opt/grafana/bin/grafana-server --homepath=/opt/grafana --config=/opt/grafana/conf/defaults.ini
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
+# Install Grafana via repository for easier updates
+sudo tee /etc/yum.repos.d/grafana.repo > /dev/null <<'EOF'
+[grafana]
+name=grafana
+baseurl=https://rpm.grafana.com
+repo_gpgcheck=1
+enabled=1
+gpgcheck=1
+gpgkey=https://rpm.grafana.com/gpg.key
+sslverify=1
+sslcacert=/etc/pki/tls/certs/ca-bundle.crt
 EOF
 
+sudo dnf install -y grafana
+
 # Create Grafana datasource config for Prometheus
-sudo mkdir -p /opt/grafana/provisioning/datasources
-sudo tee /opt/grafana/provisioning/datasources/prometheus.yml >/dev/null <<'EOF'
+sudo mkdir -p /etc/grafana/provisioning/datasources
+sudo tee /etc/grafana/provisioning/datasources/prometheus.yml >/dev/null <<'EOF'
 apiVersion: 1
 
 datasources:
@@ -212,17 +202,17 @@ EOF
 # Reload systemd and start all services
 sudo systemctl daemon-reload
 sudo systemctl enable prometheus
-sudo systemctl enable grafana
+sudo systemctl enable grafana-server
 sudo systemctl enable alertmanager
 
 sudo systemctl start prometheus
-sudo systemctl start grafana
+sudo systemctl start grafana-server
 sudo systemctl start alertmanager
 
 # Verify services are running
 echo "=== Verifying Services ==="
 sudo systemctl status prometheus --no-pager || true
-sudo systemctl status grafana --no-pager || true
+sudo systemctl status grafana-server --no-pager || true
 sudo systemctl status alertmanager --no-pager || true
 
 echo ""
