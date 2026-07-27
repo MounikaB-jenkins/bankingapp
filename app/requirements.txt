@@ -2,6 +2,7 @@
 Flask==2.2.5
 # Werkzeug 3.0 removes the __version__ attribute, which Flask 2.2.x needs.
 Werkzeug<3.0
-prometheus-client==0.20.0
+# prometheus-client 0.18.0+ requires Python 3.8+
+prometheus-client==0.17.1
 boto3==1.35.4
 psycopg2-binary==2.9.2
