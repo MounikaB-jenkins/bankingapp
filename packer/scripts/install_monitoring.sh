@@ -2,8 +2,8 @@
 set -euo pipefail
 
 # Install dependencies
-sudo dnf update -y
-sudo dnf install -y wget tar jq
+sudo yum update -y
+sudo yum install -y wget tar jq
 
 cd /tmp
 
@@ -132,8 +132,8 @@ gpgkey=https://rpm.grafana.com/gpg.key
 sslverify=1
 sslcacert=/etc/pki/tls/certs/ca-bundle.crt
 EOF
-
-sudo dnf install -y grafana
+ 
+sudo yum install -y grafana
 
 # Create Grafana datasource config for Prometheus
 sudo mkdir -p /etc/grafana/provisioning/datasources
