@@ -28,8 +28,19 @@ cd /tmp
 
 # Install Prometheus v3.13.1
 PROM_VERSION="3.13.1"
-wget https://github.com/prometheus/prometheus/releases/download/v${PROM_VERSION}/prometheus-${PROM_VERSION}.linux-amd64.tar.gz
-tar -xvf prometheus-${PROM_VERSION}.linux-amd64.tar.gz
+PROM_ARCHIVE="prometheus-${PROM_VERSION}.linux-amd64.tar.gz"
+echo "--- Downloading Prometheus ${PROM_VERSION} with retry ---"
+for i in {1..5}; do
+    wget -q "https://github.com/prometheus/prometheus/releases/download/v${PROM_VERSION}/${PROM_ARCHIVE}" -O "${PROM_ARCHIVE}" && break
+    echo "Attempt $i: Prometheus download failed. Retrying in 10s..."
+    sleep 10
+done
+
+if [ ! -f "${PROM_ARCHIVE}" ]; then
+    echo "ERROR: Prometheus download failed after multiple attempts." >&2
+    exit 1
+fi
+tar -xvf "${PROM_ARCHIVE}"
 
 # Create prometheus user
 sudo useradd --no-create-home --shell /usr/sbin/nologin prometheus
@@ -168,9 +179,21 @@ datasources:
 EOF
 
 # Install Alertmanager
-wget https://github.com/prometheus/alertmanager/releases/download/v0.26.0/alertmanager-0.26.0.linux-amd64.tar.gz
-tar -xzf alertmanager-0.26.0.linux-amd64.tar.gz
-sudo mv alertmanager-0.26.0.linux-amd64 /opt/alertmanager
+AM_VERSION="0.26.0"
+AM_ARCHIVE="alertmanager-${AM_VERSION}.linux-amd64.tar.gz"
+echo "--- Downloading Alertmanager ${AM_VERSION} with retry ---"
+for i in {1..5}; do
+    wget -q "https://github.com/prometheus/alertmanager/releases/download/v${AM_VERSION}/${AM_ARCHIVE}" -O "${AM_ARCHIVE}" && break
+    echo "Attempt $i: Alertmanager download failed. Retrying in 10s..."
+    sleep 10
+done
+
+if [ ! -f "${AM_ARCHIVE}" ]; then
+    echo "ERROR: Alertmanager download failed after multiple attempts." >&2
+    exit 1
+fi
+tar -xzf "${AM_ARCHIVE}"
+sudo mv "alertmanager-${AM_VERSION}.linux-amd64" /opt/alertmanager
 
 # Create Alertmanager user
 sudo useradd --no-create-home --shell /usr/sbin/nologin alertmanager
@@ -218,21 +241,57 @@ Restart=always
 WantedBy=multi-user.target
 EOF
 
+# Install Node Exporter for self-monitoring
+NE_VERSION="1.6.1"
+NE_ARCHIVE="node_exporter-${NE_VERSION}.linux-amd64.tar.gz"
+echo "--- Downloading Node Exporter ${NE_VERSION} with retry ---"
+for i in {1..5}; do
+    wget -q "https://github.com/prometheus/node_exporter/releases/download/v${NE_VERSION}/${NE_ARCHIVE}" -O "${NE_ARCHIVE}" && break
+    echo "Attempt $i: Node Exporter download failed. Retrying in 10s..."
+    sleep 10
+done
+
+if [ ! -f "${NE_ARCHIVE}" ]; then
+    echo "ERROR: Node Exporter download failed after multiple attempts." >&2
+    exit 1
+fi
+sudo tar -xzf "${NE_ARCHIVE}" -C /usr/local
+sudo mv "/usr/local/node_exporter-${NE_VERSION}.linux-amd64/node_exporter" /usr/local/bin/node_exporter
+sudo chmod +x /usr/local/bin/node_exporter
+
+# Create Node Exporter systemd service
+sudo tee /etc/systemd/system/node_exporter.service >/dev/null <<'EOF'
+[Unit]
+Description=Node Exporter
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/node_exporter
+Restart=always
+User=ec2-user
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
 # Reload systemd and start all services
 sudo systemctl daemon-reload
 sudo systemctl enable prometheus
 sudo systemctl enable grafana-server
 sudo systemctl enable alertmanager
+sudo systemctl enable node_exporter
 
 sudo systemctl start prometheus
 sudo systemctl start grafana-server
 sudo systemctl start alertmanager
+sudo systemctl start node_exporter
 
 # Verify services are running
 echo "=== Verifying Services ==="
 sudo systemctl status prometheus --no-pager || true
 sudo systemctl status grafana-server --no-pager || true
 sudo systemctl status alertmanager --no-pager || true
+sudo systemctl status node_exporter --no-pager || true
 
 echo ""
 echo "=== Installation Complete ==="

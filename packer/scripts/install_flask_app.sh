@@ -41,10 +41,22 @@ sudo python3 -m pip install -r /tmp/requirements.txt
 
 # Install Node Exporter for metrics scraping
 cd /tmp
-wget -q https://github.com/prometheus/node_exporter/releases/download/v1.6.1/node_exporter-1.6.1.linux-amd64.tar.gz -O node_exporter.tar.gz || { echo "Node Exporter download failed"; exit 1; }
-sudo tar -xzf node_exporter.tar.gz -C /usr/local || { echo "Node Exporter extract failed"; exit 1; }
-sudo mv /usr/local/node_exporter-*/node_exporter /usr/local/bin/node_exporter || { echo "Node Exporter move failed"; exit 1; }
-sudo chmod +x /usr/local/bin/node_exporter || { echo "Node Exporter chmod failed"; exit 1; }
+NE_VERSION="1.6.1"
+NE_ARCHIVE="node_exporter-${NE_VERSION}.linux-amd64.tar.gz"
+echo "--- Downloading Node Exporter ${NE_VERSION} with retry ---"
+for i in {1..5}; do
+    wget -q "https://github.com/prometheus/node_exporter/releases/download/v${NE_VERSION}/${NE_ARCHIVE}" -O "${NE_ARCHIVE}" && break
+    echo "Attempt $i: Node Exporter download failed. Retrying in 10s..."
+    sleep 10
+done
+
+if [ ! -f "${NE_ARCHIVE}" ]; then
+    echo "ERROR: Node Exporter download failed after multiple attempts." >&2
+    exit 1
+fi
+sudo tar -xzf "${NE_ARCHIVE}" -C /usr/local
+sudo mv "/usr/local/node_exporter-${NE_VERSION}.linux-amd64/node_exporter" /usr/local/bin/node_exporter
+sudo chmod +x /usr/local/bin/node_exporter
 
 # Create Node Exporter systemd service
 sudo tee /etc/systemd/system/node_exporter.service >/dev/null <<'EOF'
