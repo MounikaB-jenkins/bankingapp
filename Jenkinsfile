@@ -88,8 +88,8 @@ pipeline {
         sh '''
           set -e
           cd packer
-          FLASK_AMI=$(grep -oE "ami-[a-z0-9]{17}" flask-build.log | head -1)
-          MONITORING_AMI=$(grep -oE "ami-[a-z0-9]{17}" monitoring-build.log | head -1)
+          FLASK_AMI=$(grep -oE "ami-[a-z0-9]{17}" flask-build.log | tail -1)
+          MONITORING_AMI=$(grep -oE "ami-[a-z0-9]{17}" monitoring-build.log | tail -1)
           
           if [ -z "$FLASK_AMI" ] || [ -z "$MONITORING_AMI" ]; then
             echo "ERROR: Could not extract AMI IDs from Packer output"
