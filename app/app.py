@@ -51,16 +51,16 @@ def login():
             flash("Could not connect to the database.", "error")
             return render_template("login.html")
 
-        with conn.cursor() as cur:
-            # WARNING: This is vulnerable to SQL injection and stores passwords in plaintext.
-            # In a real app, use parameterized queries and hash passwords.
+        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+            # The query is parameterized, which prevents SQL injection.
+            # WARNING: This still checks a plaintext password. In a real app, use hashed passwords.
             cur.execute("SELECT id, customer_id FROM users WHERE username = %s AND password = %s", (username, password))
             user = cur.fetchone()
 
         conn.close()
         if user:
-            session["user_id"] = user[0]
-            session["customer_id"] = user[1]
+            session["user_id"] = user["id"]
+            session["customer_id"] = user["customer_id"]
             return redirect(url_for("dashboard"))
         else:
             flash("Invalid username or password.", "error")

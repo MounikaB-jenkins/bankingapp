@@ -31,37 +31,43 @@ resource "aws_security_group" "app" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # Restrict SSH access
-  }
-
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # ALB will handle public traffic
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
     from_port   = 8080
     to_port     = 8080
     protocol    = "tcp"
-    # Allow traffic from the monitoring instance
-    security_groups = [aws_security_group.monitoring.id]
+    # Allow traffic from the ALB
+    security_groups = [aws_security_group.alb.id]
   }
 
-  # Allow traffic from other resources within this security group (like the ALB)
-  ingress {
-    from_port = 8080
-    to_port   = 8080
-    protocol  = "tcp"
-    self      = true
-  }
   # Allow Node Exporter scraping from monitoring instance
   ingress {
     from_port   = 9100
     to_port     = 9100
     protocol    = "tcp"
     security_groups = [aws_security_group.monitoring.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_security_group" "alb" {
+  name        = "bankingapp-alb-sg"
+  description = "Allow HTTP traffic to ALB"
+  vpc_id      = var.vpc_id
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
@@ -252,7 +258,7 @@ resource "aws_lb" "app" {
   name               = "bankingapp-alb"
   internal           = false
   load_balancer_type = "application"
-  security_groups    = [aws_security_group.app.id]
+  security_groups    = [aws_security_group.alb.id]
   subnets            = var.subnet_ids
 }
 
@@ -289,7 +295,6 @@ resource "aws_launch_template" "app" {
   }
 
   user_data = base64encode(templatefile("${path.module}/user_data_app.sh.tpl", {
-    db_secret_arn = aws_secretsmanager_secret.db_credentials.arn
     db_host       = aws_db_instance.postgres.address
     db_name       = var.db_name
     db_username   = var.db_username
