@@ -73,6 +73,11 @@ User=ec2-user
 WantedBy=multi-user.target
 EOF
 
+if [ ! -f /etc/systemd/system/node_exporter.service ]; then
+    echo "ERROR: Node Exporter service file was not created at /etc/systemd/system/node_exporter.service" >&2
+    exit 1
+fi
+
 # Create app directory
 sudo mkdir -p /opt/bankingapp
 sudo cp -r /tmp/bankingapp-app /opt/bankingapp/app
@@ -111,6 +116,11 @@ User=ec2-user
 [Install]
 WantedBy=multi-user.target
 EOF
+
+if [ ! -f /etc/systemd/system/bankingapp.service ]; then
+    echo "ERROR: BankingApp service file was not created at /etc/systemd/system/bankingapp.service" >&2
+    exit 1
+fi
 
 # Enable and START all services
 sudo systemctl daemon-reload

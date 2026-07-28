@@ -84,6 +84,11 @@ Restart=always
 WantedBy=multi-user.target
 EOF
 
+if [ ! -f /etc/systemd/system/prometheus.service ]; then
+    echo "ERROR: Prometheus service file was not created at /etc/systemd/system/prometheus.service" >&2
+    exit 1
+fi
+
 # Create Prometheus config
 sudo tee /etc/prometheus/prometheus.yml >/dev/null <<'EOF'
 global:
@@ -171,6 +176,11 @@ for i in {1..5}; do
     sudo pkill -9 -f yum || true; sudo rm -f /var/run/yum.pid; sleep 10
 done
 
+if ! sudo systemctl list-unit-files | grep -q '^grafana-server.service'; then
+    echo "ERROR: grafana-server.service not found. The 'yum install grafana' command may have failed." >&2
+    exit 1
+fi
+
 # Create Grafana datasource config for Prometheus
 sudo mkdir -p /etc/grafana/provisioning/datasources
 sudo tee /etc/grafana/provisioning/datasources/prometheus.yml >/dev/null <<'EOF'
@@ -253,6 +263,11 @@ Restart=always
 WantedBy=multi-user.target
 EOF
 
+if [ ! -f /etc/systemd/system/alertmanager.service ]; then
+    echo "ERROR: Alertmanager service file was not created at /etc/systemd/system/alertmanager.service" >&2
+    exit 1
+fi
+
 # Install Node Exporter for self-monitoring
 NE_VERSION="1.6.1"
 NE_ARCHIVE="node_exporter-${NE_VERSION}.linux-amd64.tar.gz"
@@ -291,6 +306,11 @@ User=ec2-user
 [Install]
 WantedBy=multi-user.target
 EOF
+
+if [ ! -f /etc/systemd/system/node_exporter.service ]; then
+    echo "ERROR: Node Exporter service file was not created at /etc/systemd/system/node_exporter.service" >&2
+    exit 1
+fi
 
 # Reload systemd and start all services
 sudo systemctl daemon-reload
