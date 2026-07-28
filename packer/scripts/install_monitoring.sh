@@ -10,9 +10,19 @@ echo "Forcefully stopping any existing yum processes..."
 sudo pkill -9 -f yum || true
 sudo rm -f /var/run/yum.pid
 
-# Update and install dependencies
-sudo yum update -y
-sudo yum install -y wget tar jq
+echo "--- Running yum update with retry ---"
+for i in {1..5}; do
+    timeout 300 sudo yum update -y && break
+    echo "Attempt $i: Yum update failed, likely due to a lock. Killing processes and retrying in 10s..."
+    sudo pkill -9 -f yum || true; sudo rm -f /var/run/yum.pid; sleep 10
+done
+
+echo "--- Installing dependencies with retry ---"
+for i in {1..5}; do
+    timeout 300 sudo yum install -y wget tar jq && break
+    echo "Attempt $i: Yum install failed, likely due to a lock. Killing processes and retrying in 10s..."
+    sudo pkill -9 -f yum || true; sudo rm -f /var/run/yum.pid; sleep 10
+done
 
 cd /tmp
 
@@ -136,8 +146,13 @@ gpgkey=https://rpm.grafana.com/gpg.key
 sslverify=1
 sslcacert=/etc/pki/tls/certs/ca-bundle.crt
 EOF
- 
-sudo yum install -y grafana
+
+echo "--- Installing Grafana with retry ---"
+for i in {1..5}; do
+    timeout 300 sudo yum install -y grafana && break
+    echo "Attempt $i: Grafana install failed, likely due to a lock. Killing processes and retrying in 10s..."
+    sudo pkill -9 -f yum || true; sudo rm -f /var/run/yum.pid; sleep 10
+done
 
 # Create Grafana datasource config for Prometheus
 sudo mkdir -p /etc/grafana/provisioning/datasources

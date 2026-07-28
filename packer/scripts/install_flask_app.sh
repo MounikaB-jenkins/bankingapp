@@ -11,10 +11,28 @@ echo "Forcefully stopping any existing yum processes..."
 sudo pkill -9 -f yum || true
 sudo rm -f /var/run/yum.pid
 
-# Update packages and install all dependencies in a single transaction
-sudo yum update -y
-sudo amazon-linux-extras install nginx1 -y
-sudo yum install -y postgresql python3-pip git awscli
+echo "--- Running yum update with retry ---"
+for i in {1..5}; do
+    timeout 300 sudo yum update -y && break
+    echo "Attempt $i: Yum update failed, likely due to a lock. Killing processes and retrying in 10s..."
+    sudo pkill -9 -f yum || true; sudo rm -f /var/run/yum.pid; sleep 10
+done
+
+echo "--- Installing nginx with retry ---"
+for i in {1..5}; do
+    timeout 300 sudo amazon-linux-extras install nginx1 -y && break
+    echo "Attempt $i: Nginx install failed, likely due to a lock. Killing processes and retrying in 10s..."
+    sudo pkill -9 -f yum || true; sudo rm -f /var/run/yum.pid; sleep 10
+done
+
+echo "--- Installing other packages with retry ---"
+for i in {1..5}; do
+    timeout 300 sudo yum install -y postgresql python3-pip git awscli && break
+    echo "Attempt $i: Yum install failed, likely due to a lock. Killing processes and retrying in 10s..."
+    sudo pkill -9 -f yum || true; sudo rm -f /var/run/yum.pid; sleep 10
+done
+
+echo "--- Upgrading pip ---"
 sudo python3 -m pip install --upgrade pip
 
 # Install Python dependencies from requirements.txt
