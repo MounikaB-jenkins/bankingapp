@@ -1,7 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Install dependencies
+# Aggressively stop and disable automatic updates to prevent yum lock conflicts.
+sudo systemctl stop yum-cron || true
+sudo systemctl disable yum-cron || true
+
+# Kill any lingering yum process and remove the lock file to take control.
+echo "Forcefully stopping any existing yum processes..."
+sudo pkill -f yum || true
+sudo rm -f /var/run/yum.pid
+
+# Update and install dependencies
 sudo yum update -y
 sudo yum install -y wget tar jq
 
