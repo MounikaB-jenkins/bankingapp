@@ -40,10 +40,16 @@ if [ ! -f "${PROM_ARCHIVE}" ]; then
     echo "ERROR: Prometheus download failed after multiple attempts." >&2
     exit 1
 fi
-tar -xvf "${PROM_ARCHIVE}"
+
+echo "--- Extracting Prometheus ---"
+if ! tar -xvf "${PROM_ARCHIVE}"; then
+    echo "ERROR: Failed to extract Prometheus archive. The downloaded file may be corrupt." >&2
+    exit 1
+fi
 
 # Create prometheus user
-sudo useradd --no-create-home --shell /usr/sbin/nologin prometheus
+echo "--- Creating prometheus user ---"
+id -u prometheus &>/dev/null || sudo useradd --no-create-home --shell /usr/sbin/nologin prometheus
 
 # Create directories
 sudo mkdir -p /etc/prometheus /var/lib/prometheus
@@ -192,11 +198,17 @@ if [ ! -f "${AM_ARCHIVE}" ]; then
     echo "ERROR: Alertmanager download failed after multiple attempts." >&2
     exit 1
 fi
-tar -xzf "${AM_ARCHIVE}"
+
+echo "--- Extracting Alertmanager ---"
+if ! tar -xzf "${AM_ARCHIVE}"; then
+    echo "ERROR: Failed to extract Alertmanager archive. The downloaded file may be corrupt." >&2
+    exit 1
+fi
 sudo mv "alertmanager-${AM_VERSION}.linux-amd64" /opt/alertmanager
 
 # Create Alertmanager user
-sudo useradd --no-create-home --shell /usr/sbin/nologin alertmanager
+echo "--- Creating alertmanager user ---"
+id -u alertmanager &>/dev/null || sudo useradd --no-create-home --shell /usr/sbin/nologin alertmanager
 sudo mkdir -p /var/lib/alertmanager
 sudo chown -R alertmanager:alertmanager /opt/alertmanager
 sudo chown -R alertmanager:alertmanager /var/lib/alertmanager
@@ -255,7 +267,13 @@ if [ ! -f "${NE_ARCHIVE}" ]; then
     echo "ERROR: Node Exporter download failed after multiple attempts." >&2
     exit 1
 fi
-sudo tar -xzf "${NE_ARCHIVE}" -C /usr/local
+
+echo "--- Extracting Node Exporter ---"
+if ! sudo tar -xzf "${NE_ARCHIVE}" -C /usr/local; then
+    echo "ERROR: Failed to extract Node Exporter archive. The downloaded file may be corrupt." >&2
+    exit 1
+fi
+
 sudo mv "/usr/local/node_exporter-${NE_VERSION}.linux-amd64/node_exporter" /usr/local/bin/node_exporter
 sudo chmod +x /usr/local/bin/node_exporter
 
