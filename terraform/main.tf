@@ -295,9 +295,7 @@ resource "aws_launch_template" "app" {
   }
 
   user_data = base64encode(templatefile("${path.module}/user_data_app.sh.tpl", {
-    db_host       = aws_db_instance.postgres.address
-    db_name       = var.db_name
-    db_username   = var.db_username
+    db_secret_arn = aws_secretsmanager_secret.db_credentials.arn
   }))
 
   tag_specifications {
