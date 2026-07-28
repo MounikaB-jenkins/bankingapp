@@ -110,7 +110,7 @@ After=network.target
 WorkingDirectory=/opt/bankingapp/app
 Environment=ENVIRONMENT=prod
 EnvironmentFile=/etc/bankingapp.env
-ExecStart=/usr/local/bin/gunicorn --workers 3 --bind 127.0.0.1:8000 app:app
+ExecStart=/usr/local/bin/gunicorn --workers 1 --bind 127.0.0.1:8000 app:app
 Restart=always
 User=ec2-user
 
