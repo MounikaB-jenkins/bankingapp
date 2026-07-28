@@ -135,8 +135,4 @@ fi
 sudo systemctl enable nginx
 sudo systemctl enable node_exporter
 
-sudo systemctl start bankingapp.service
-sudo systemctl start nginx
-sudo systemctl start node_exporter
-
-echo "=== Flask App Services Started ==="
+echo "=== Flask App Services Enabled ==="
