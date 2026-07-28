@@ -8,7 +8,7 @@ sudo systemctl disable yum-cron || true
 
 # Kill any lingering yum process and remove the lock file to take control.
 echo "Forcefully stopping any existing yum processes..."
-sudo pkill -f yum || true
+sudo pkill -9 -f yum || true
 sudo rm -f /var/run/yum.pid
 
 # Update packages and install all dependencies in a single transaction
