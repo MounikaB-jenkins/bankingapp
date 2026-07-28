@@ -176,6 +176,78 @@ resource "aws_db_instance" "postgres" {
   apply_immediately      = true
 }
 
+resource "aws_iam_role" "app_instance_role" {
+  name = "bankingapp-app-instance-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_policy" "secrets_manager_read_policy" {
+  name        = "bankingapp-secrets-manager-read-policy"
+  description = "Allows reading the database credentials secret"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action   = "secretsmanager:GetSecretValue"
+        Effect   = "Allow"
+        Resource = aws_secretsmanager_secret.db_credentials.arn
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "attach_secrets_policy" {
+  role       = aws_iam_role.app_instance_role.name
+  policy_arn = aws_iam_policy.secrets_manager_read_policy.arn
+}
+
+resource "aws_iam_role" "monitoring_instance_role" {
+  name = "bankingapp-monitoring-instance-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_policy" "ec2_discovery_policy" {
+  name        = "bankingapp-ec2-discovery-policy"
+  description = "Allows describing EC2 instances for Prometheus service discovery"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action   = ["ec2:DescribeInstances", "ec2:DescribeTags"]
+        Effect   = "Allow"
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "attach_ec2_discovery_policy" {
+  role       = aws_iam_role.monitoring_instance_role.name
+  policy_arn = aws_iam_policy.ec2_discovery_policy.arn
+}
+
 resource "aws_lb" "app" {
   name               = "bankingapp-alb"
   internal           = false
@@ -212,6 +284,10 @@ resource "aws_launch_template" "app" {
   instance_type = var.instance_type
   vpc_security_group_ids = [aws_security_group.app.id]
 
+  iam_instance_profile {
+    name = aws_iam_instance_profile.app_instance_profile.name
+  }
+
   user_data = base64encode(templatefile("${path.module}/user_data_app.sh.tpl", {
     db_secret_arn = aws_secretsmanager_secret.db_credentials.arn
     db_host       = aws_db_instance.postgres.address
@@ -226,6 +302,16 @@ resource "aws_launch_template" "app" {
       Project = "BankingApp"
     }
   }
+}
+
+resource "aws_iam_instance_profile" "app_instance_profile" {
+  name = "bankingapp-app-instance-profile"
+  role = aws_iam_role.app_instance_role.name
+}
+
+resource "aws_iam_instance_profile" "monitoring_instance_profile" {
+  name = "bankingapp-monitoring-instance-profile"
+  role = aws_iam_role.monitoring_instance_role.name
 }
 
 resource "aws_autoscaling_group" "app" {
@@ -255,6 +341,8 @@ resource "aws_instance" "monitoring" {
   subnet_id                   = var.subnet_ids[0]
   vpc_security_group_ids      = [aws_security_group.monitoring.id]
   associate_public_ip_address = true
+
+  iam_instance_profile = aws_iam_instance_profile.monitoring_instance_profile.name
 
   tags = {
     Name    = "bankingapp-monitoring"

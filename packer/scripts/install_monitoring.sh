@@ -117,9 +117,22 @@ scrape_configs:
 
   - job_name: "flask-app"
     metrics_path: /metrics
-    # This will be dynamically discovered via a file_sd_config in a production setup
-    static_configs:
-      - targets: ['<APP_INSTANCE_IP>:8080'] # Placeholder, will need dynamic discovery
+    ec2_sd_configs:
+      - region: eu-central-1
+        port: 8080
+    relabel_configs:
+      # Only scrape instances with the tag 'Project'='BankingApp'
+      - source_labels: [__meta_ec2_tag_Project]
+        regex: 'BankingApp'
+        action: keep
+      # Only scrape instances with the tag 'Name'='bankingapp-app'
+      - source_labels: [__meta_ec2_tag_Name]
+        regex: 'bankingapp-app'
+        action: keep
+      # Use the private IP address for the scrape address
+      - source_labels: [__meta_ec2_private_ip]
+        target_label: __address__
+        replacement: "${1}:8080"
 EOF
 
 # Create alert rules

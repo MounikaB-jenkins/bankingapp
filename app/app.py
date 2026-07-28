@@ -3,10 +3,17 @@ import json
 import boto3
 import psycopg2
 from flask import Flask, jsonify, render_template, request, redirect, url_for, session, flash
+from prometheus_client import make_wsgi_app
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
 
 app = Flask(__name__)
 # WARNING: Use a more secure, randomly generated secret key and store it outside the code.
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "a-very-insecure-default-key")
+
+# Add prometheus wsgi middleware to route /metrics requests
+app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {
+    '/metrics': make_wsgi_app()
+})
 
 
 def get_db_connection():
