@@ -74,6 +74,12 @@ def dashboard():
         return redirect(url_for("login"))
 
     conn = get_db_connection()
+    if not conn:
+        flash("Could not connect to the database to load dashboard.", "error")
+        # Clear the potentially invalid session and redirect to login
+        session.clear()
+        return redirect(url_for("login"))
+
     with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
         cur.execute("SELECT * FROM customers WHERE id = %s", (session["customer_id"],))
         customer = cur.fetchone()
