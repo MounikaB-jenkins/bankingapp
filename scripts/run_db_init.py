@@ -2,6 +2,7 @@
 import os
 import sys
 import json
+import time
 import boto3
 import psycopg2
 
@@ -14,17 +15,27 @@ def initialize_database(secret_arn, sql_file_path):
         get_secret_value_response = client.get_secret_value(SecretId=secret_arn)
         secret = json.loads(get_secret_value_response['SecretString'])
         print("Successfully fetched credentials.")
-
-        print(f"Connecting to database host: {secret['host']}")
-        conn = psycopg2.connect(
-            host=secret['host'],
-            dbname=secret['dbname'],
-            user=secret['username'],
-            password=secret['password'],
-            port=secret.get('port', 5432),
-            connect_timeout=10
-        )
-        print("Database connection successful.")
+        
+        conn = None
+        for i in range(10): # Retry for up to 100 seconds
+            try:
+                print(f"Connecting to database host: {secret['host']} (Attempt {i+1}/10)")
+                conn = psycopg2.connect(
+                    host=secret['host'],
+                    dbname=secret['dbname'],
+                    user=secret['username'],
+                    password=secret['password'],
+                    port=secret.get('port', 5432),
+                    connect_timeout=10
+                )
+                break # Exit loop on success
+            except psycopg2.OperationalError as e:
+                print(f"Connection attempt failed: {e}. Retrying in 10 seconds...")
+                time.sleep(10)
+        
+        if not conn:
+            print("ERROR: Could not connect to the database after multiple retries.", file=sys.stderr)
+            sys.exit(1)
 
         with conn.cursor() as cur:
             print(f"Reading and executing SQL script from: {sql_file_path}")
