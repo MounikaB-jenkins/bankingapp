@@ -103,11 +103,7 @@ sudo rm -f /etc/nginx/conf.d/default.conf
 # Create Flask app systemd service
 sudo tee /etc/systemd/system/bankingapp.service >/dev/null <<'EOF'
 [Unit]
-Description=BankingApp Flask service
-After=network.target
-
-[Unit]
-Description=BankingApp Flask service
+Description=BankingApp Flask Service
 After=network.target cloud-final.service
 Wants=cloud-final.service
 
