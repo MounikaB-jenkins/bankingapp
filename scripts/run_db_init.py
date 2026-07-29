@@ -34,7 +34,7 @@ def initialize_database(secret_arn, sql_file_path):
                 time.sleep(10)
         
         if not conn:
-            print("ERROR: Could not connect to the database after multiple retries.", file=sys.stderr)
+            print("ERROR: Could not connect to the database after multiple retries. Check network connectivity and security group rules between the Jenkins agent and the RDS instance.", file=sys.stderr)
             sys.exit(1)
 
         with conn.cursor() as cur:

@@ -22,6 +22,12 @@ variable "subnet_ids" {
   default     = ["subnet-0e2b2454962fb5acf"]
 }
 
+variable "jenkins_agent_sg_id" {
+  description = "The Security Group ID of the Jenkins agent instance. This is required to allow the agent to initialize the database."
+  type        = string
+  default     = "" # Must be provided in terraform.tfvars
+}
+
 variable "flask_ami_id" {
   description = "AMI ID built by Packer for the Flask app"
   type        = string
