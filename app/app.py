@@ -98,8 +98,21 @@ def index():
 
 @app.get("/health")
 def health():
-    return jsonify({"status": "ok"})
-
+    """Performs a health check on the application and its dependencies."""
+    try:
+        conn = get_db_connection()
+        if conn:
+            # Perform a simple, fast query to check the connection is alive
+            with conn.cursor() as cur:
+                cur.execute("SELECT 1")
+            conn.close()
+            return jsonify({"status": "ok", "database": "connected"})
+        else:
+            # The get_db_connection function returned None
+            return jsonify({"status": "unhealthy", "reason": "Database connection could not be established"}), 503
+    except Exception as e:
+        # Any other exception during the check (e.g., failed query)
+        return jsonify({"status": "unhealthy", "reason": f"Database check failed: {e}"}), 503
 
 @app.route("/logout")
 def logout():
