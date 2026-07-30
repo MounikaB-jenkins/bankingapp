@@ -118,6 +118,27 @@ pipeline {
             -var "monitoring_ami_id=$MONITORING_AMI"
         '''
       }
+      post {
+        always {
+          sh '''
+            set -e
+            cd terraform
+            echo "Saving Terraform outputs..."
+            terraform output -raw secret_arn > ../db_secret_arn.txt
+          '''
+        }
+      }
+    }
+
+    stage('Initialize Database') {
+      steps {
+        sh '''
+          set -e
+          . .venv/bin/activate
+          pip install boto3 psycopg2-binary
+          python3 scripts/run_db_init.py "$(cat db_secret_arn.txt)" "scripts/init_db.sql"
+        '''
+      }
     }
   }
 }
