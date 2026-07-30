@@ -136,12 +136,12 @@ resource "aws_security_group" "db" {
     security_groups = [aws_security_group.app.id]
   }
 
-  # Allow access from the Jenkins agent for database initialization
+  # Allow access from the trusted IP for database initialization
   ingress {
     from_port       = 5432
     to_port         = 5432
     protocol        = "tcp"
-    security_groups = [var.jenkins_agent_sg_id]
+    cidr_blocks     = [var.trusted_ip_cidr]
   }
 
   egress {

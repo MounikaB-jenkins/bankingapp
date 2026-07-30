@@ -281,50 +281,6 @@ if [ ! -f /etc/systemd/system/alertmanager.service ]; then
     exit 1
 fi
 
-# Install Node Exporter for self-monitoring
-NE_VERSION="1.6.1"
-NE_ARCHIVE="node_exporter-${NE_VERSION}.linux-amd64.tar.gz"
-echo "--- Downloading Node Exporter ${NE_VERSION} with retry ---"
-for i in {1..5}; do
-    wget -q "https://github.com/prometheus/node_exporter/releases/download/v${NE_VERSION}/${NE_ARCHIVE}" -O "${NE_ARCHIVE}" && break
-    echo "Attempt $i: Node Exporter download failed. Retrying in 10s..."
-    sleep 10
-done
-
-if [ ! -f "${NE_ARCHIVE}" ]; then
-    echo "ERROR: Node Exporter download failed after multiple attempts." >&2
-    exit 1
-fi
-
-echo "--- Extracting Node Exporter ---"
-if ! sudo tar -xzf "${NE_ARCHIVE}" -C /usr/local; then
-    echo "ERROR: Failed to extract Node Exporter archive. The downloaded file may be corrupt." >&2
-    exit 1
-fi
-
-sudo mv "/usr/local/node_exporter-${NE_VERSION}.linux-amd64/node_exporter" /usr/local/bin/node_exporter
-sudo chmod +x /usr/local/bin/node_exporter
-
-# Create Node Exporter systemd service
-sudo tee /etc/systemd/system/node_exporter.service >/dev/null <<'EOF'
-[Unit]
-Description=Node Exporter
-After=network.target
-
-[Service]
-ExecStart=/usr/local/bin/node_exporter
-Restart=always
-User=ec2-user
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-if [ ! -f /etc/systemd/system/node_exporter.service ]; then
-    echo "ERROR: Node Exporter service file was not created at /etc/systemd/system/node_exporter.service" >&2
-    exit 1
-fi
-
 # Reload systemd and start all services
 sudo systemctl daemon-reload
 sudo systemctl enable prometheus
