@@ -35,11 +35,24 @@ done
 echo "--- Upgrading pip ---"
 sudo python3 -m pip install --upgrade pip
 
-# Install Python dependencies from requirements.txt
-sudo cp /tmp/bankingapp-app/requirements.txt /tmp/
-sudo python3 -m pip install -r /tmp/requirements.txt
+# Create a non-privileged user for the application
+sudo useradd --no-create-home --shell /bin/false bankingapp
 
-# Install Node Exporter for metrics scraping
+# Create app directory and set up a virtual environment
+sudo mkdir -p /opt/bankingapp
+sudo chown -R bankingapp:bankingapp /opt/bankingapp
+sudo -u bankingapp python3 -m venv /opt/bankingapp/venv
+
+# Install Python dependencies into the virtual environment
+sudo cp /tmp/bankingapp-app/requirements.txt /tmp/
+sudo /opt/bankingapp/venv/bin/pip install -r /tmp/requirements.txt
+
+# Deploy the application code
+sudo cp -r /tmp/bankingapp-app /opt/bankingapp/app
+sudo chown -R bankingapp:bankingapp /opt/bankingapp/app
+
+# --- Node Exporter Installation ---
+# Install Node Exporter for metrics scraping. Runs as ec2-user.
 cd /tmp
 NE_VERSION="1.6.1"
 NE_ARCHIVE="node_exporter-${NE_VERSION}.linux-amd64.tar.gz"
@@ -78,10 +91,6 @@ if [ ! -f /etc/systemd/system/node_exporter.service ]; then
     exit 1
 fi
 
-# Create app directory
-sudo mkdir -p /opt/bankingapp
-sudo cp -r /tmp/bankingapp-app /opt/bankingapp/app
-
 # Create Nginx reverse proxy configuration
 sudo tee /etc/nginx/conf.d/bankingapp.conf >/dev/null <<'EOF'
 server {
@@ -109,11 +118,11 @@ Wants=cloud-final.service
 
 [Service]
 WorkingDirectory=/opt/bankingapp/app
-Environment=ENVIRONMENT=prod
 EnvironmentFile=/etc/bankingapp.env
-ExecStart=/usr/local/bin/gunicorn --workers 1 --bind 127.0.0.1:8000 app:app
+ExecStart=/opt/bankingapp/venv/bin/gunicorn --workers 1 --bind 127.0.0.1:8000 app:app
 Restart=always
-User=ec2-user
+User=bankingapp
+Group=bankingapp
 
 [Install]
 WantedBy=multi-user.target
