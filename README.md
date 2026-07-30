@@ -45,6 +45,6 @@ This project creates a banking-style AWS reference architecture on the free tier
    - deploy the infrastructure with Terraform
 
 ## Notes
-- The default region is ap-south-2.
+- The default region is eu-central-1.
 - The default VPC and subnet values are set to the requested values from the earlier deployment context.
 - Replace the AMI IDs in terraform.tfvars after the image builds complete.
