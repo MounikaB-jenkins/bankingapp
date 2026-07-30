@@ -301,6 +301,10 @@ sudo tar -xzf "${NE_ARCHIVE}" -C /usr/local
 sudo mv "/usr/local/node_exporter-${NE_VERSION}.linux-amd64/node_exporter" /usr/local/bin/node_exporter
 sudo chmod +x /usr/local/bin/node_exporter
 
+# Create a dedicated user for node_exporter
+echo "--- Creating node_exporter user ---"
+id -u node_exporter &>/dev/null || sudo useradd --no-create-home --shell /bin/false node_exporter
+
 # Create Node Exporter systemd service
 sudo tee /etc/systemd/system/node_exporter.service >/dev/null <<'EOF'
 [Unit]
@@ -310,7 +314,7 @@ After=network.target
 [Service]
 ExecStart=/usr/local/bin/node_exporter
 Restart=always
-User=ec2-user
+User=node_exporter
 
 [Install]
 WantedBy=multi-user.target
