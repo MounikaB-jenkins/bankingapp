@@ -181,8 +181,10 @@ resource "aws_db_instance" "postgres" {
   db_name                = var.db_name
   username               = var.db_username
   password               = random_password.db_password.result
-  publicly_accessible    = false
-  skip_final_snapshot    = true
+  # Set to true to allow initialization from outside the VPC (e.g., Jenkins).
+  # For production, this should be 'false' and initialization should be handled from within the VPC.
+  publicly_accessible    = true
+  skip_final_snapshot    = true # OK for demo, but should be 'false' in production.
   backup_retention_period = 1  # Changed from 7 to 1 for AWS Free Tier compatibility
   storage_encrypted      = true
   vpc_security_group_ids = [aws_security_group.db.id]

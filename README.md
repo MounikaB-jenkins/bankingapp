@@ -28,7 +28,7 @@ This project creates a banking-style AWS reference architecture on the free tier
    ```bash
    cp terraform/terraform.tfvars.example terraform/terraform.tfvars
    ```
-2. Update the AMI IDs after running Packer.
+2. **Important:** Edit `terraform/terraform.tfvars` and set `trusted_ip_cidr` to your public IP address (e.g., "your_ip/32"). This is critical for security.
 3. Run:
    ```bash
    bash scripts/deploy.sh
@@ -42,9 +42,11 @@ This project creates a banking-style AWS reference architecture on the free tier
    - install Terraform and Packer
    - run the Python tests
    - build the Flask and monitoring AMIs
-   - deploy the infrastructure with Terraform
+   - deploy the infrastructure with Terraform, automatically using the new AMI IDs
+   - initialize the database with sample data
 
 ## Notes
 - The default region is eu-central-1.
 - The default VPC and subnet values are set to the requested values from the earlier deployment context.
-- Replace the AMI IDs in terraform.tfvars after the image builds complete.
+- The Jenkins pipeline automatically handles passing AMI IDs to Terraform. For manual deployment with `deploy.sh`, you will need to update `terraform.tfvars` yourself.
+- **Security Warning:** The default `trusted_ip_cidr` in `variables.tf` is `0.0.0.0/0`, which is insecure. Always override this in `terraform.tfvars` to lock down SSH and database access to your specific IP address.
