@@ -11,7 +11,7 @@ vpc_id = "vpc-02b2d5872e4eaa025"
 subnet_ids = ["subnet-03f9f842b9a125975", "subnet-02c1f0c7939d0978c"]
 
 # Jenkins Agent Security Group ID (MUST be updated)
-jenkins_agent_sg_id = "sg-069e28cd1b8fb6383"
+jenkins_agent_sg_id = "sg-0b0ac43adefca72c3"
 
 # AMI IDs (will be auto-populated by Jenkins pipeline after Packer build)
 flask_ami_id = ""
