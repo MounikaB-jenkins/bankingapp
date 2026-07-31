@@ -241,21 +241,12 @@ sudo mkdir -p /etc/alertmanager
 sudo tee /etc/alertmanager/alertmanager.yml >/dev/null <<'EOF'
 route:
   group_by: ['alertname']
-  group_wait: 30s
-  group_interval: 5m
-  repeat_interval: 3h
-  receiver: 'default-receiver'
+  receiver: 'null'
 
 receivers:
-- name: 'default-receiver'
-  email_configs:
-  - to: 'operations-team@example.com'
-    from: 'alertmanager@bankingapp.com'
-    smarthost: 'smtp.example.com:587'
-    auth_username: 'alertmanager@example.com'
-    auth_password: 'your-password'
-    require_tls: true
-    send_resolved: true
+- name: 'null'
+
+routes: []
 EOF
 
 # Create Alertmanager systemd service
