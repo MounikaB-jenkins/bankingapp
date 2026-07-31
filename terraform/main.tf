@@ -31,7 +31,7 @@ resource "aws_security_group" "app" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [var.trusted_ip_cidr]
+    cidr_blocks = var.trusted_ip_cidr
   }
 
   ingress {
@@ -89,7 +89,7 @@ resource "aws_security_group" "monitoring" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [var.trusted_ip_cidr]
+    cidr_blocks = var.trusted_ip_cidr
   }
 
   # Prometheus
@@ -97,7 +97,7 @@ resource "aws_security_group" "monitoring" {
     from_port   = 9090
     to_port     = 9090
     protocol    = "tcp"
-    cidr_blocks = [var.trusted_ip_cidr]
+    cidr_blocks = var.trusted_ip_cidr
   }
 
   # Alertmanager
@@ -105,7 +105,7 @@ resource "aws_security_group" "monitoring" {
     from_port   = 9093
     to_port     = 9093
     protocol    = "tcp"
-    cidr_blocks = [var.trusted_ip_cidr]
+    cidr_blocks = var.trusted_ip_cidr
   }
 
   # Grafana
@@ -113,7 +113,7 @@ resource "aws_security_group" "monitoring" {
     from_port   = 3000
     to_port     = 3000
     protocol    = "tcp"
-    cidr_blocks = [var.trusted_ip_cidr]
+    cidr_blocks = var.trusted_ip_cidr
   }
 
   egress {
@@ -135,7 +135,7 @@ resource "aws_security_group" "db" {
     to_port         = 5432
     protocol        = "tcp"
     security_groups = [aws_security_group.app.id]
-    cidr_blocks     = [var.trusted_ip_cidr]
+    cidr_blocks     = var.trusted_ip_cidr
   }
 
   egress {

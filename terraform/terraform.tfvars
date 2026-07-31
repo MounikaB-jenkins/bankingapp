@@ -1,5 +1,8 @@
 # Trusted IP for SSH and monitoring access
-trusted_ip_cidr = "65.2.231.85/32"
+trusted_ip_cidr = [
+  "65.2.231.85/32",    # Jenkins Worker NAT Gateway
+  "94.225.101.180/32"  # User's Laptop IP
+]
 
 # AWS Region
 region = "eu-central-1"
