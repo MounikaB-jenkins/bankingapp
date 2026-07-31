@@ -1,7 +1,7 @@
 # Trusted IP for SSH and monitoring access
 trusted_ip_cidr = [
   "65.2.231.85/32",    # Jenkins Worker NAT Gateway
-  "YOUR_CURRENT_LAPTOP_IP/32"  # IMPORTANT: Update this with your current public IP
+  "94.225.101.180/32"  # IMPORTANT: Update this with your current public IP if it has changed
 ]
 
 # AWS Region

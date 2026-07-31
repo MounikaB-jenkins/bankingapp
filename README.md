@@ -28,7 +28,7 @@ This project creates a banking-style AWS reference architecture on the free tier
    ```bash
    cp terraform/terraform.tfvars.example terraform/terraform.tfvars
    ```
-2. **CRITICAL:** Edit `terraform/terraform.tfvars` and set `trusted_ip_cidr` to a list of public IP addresses that need access (e.g., your current local machine's public IP, your Jenkins agent's NAT Gateway public IP). You can find your current public IP by searching "what is my IP" in Google. The format must be `["ip_one/32", "ip_two/32"]`. This is essential for security.
+2. **CRITICAL: You must edit `terraform/terraform.tfvars`** and set `trusted_ip_cidr` to a list of public IP addresses that need access. This includes your current local machine's public IP and your Jenkins agent's NAT Gateway public IP. You can find your current IP by searching "what is my IP" in Google. The format must be `["ip_one/32", "ip_two/32"]`. This is essential for security.
 3. Run:
    ```bash
    bash scripts/deploy.sh
