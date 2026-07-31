@@ -49,4 +49,4 @@ This project creates a banking-style AWS reference architecture on the free tier
 - The default region is eu-central-1.
 - The default VPC and subnet values are set to the requested values from the earlier deployment context.
 - The Jenkins pipeline automatically handles passing AMI IDs to Terraform. For manual deployment with `deploy.sh`, you will need to update `terraform.tfvars` yourself.
-- **Security Warning:** The default `trusted_ip_cidr` in `variables.tf` is `["0.0.0.0/0"]`, which is insecure. Always override this in `terraform.tfvars` to lock down SSH, monitoring, ALB, and database initialization access to your specific IP addresses.
+- **Security Warning:** The default `trusted_ip_cidr` in `variables.tf` is `["0.0.0.0/0"]`, which is insecure. Always override this in `terraform.tfvars` to lock down SSH, monitoring, and database initialization access to your specific IP addresses. The Application Load Balancer is currently open to the world (`0.0.0.0/0`).
