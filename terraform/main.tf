@@ -167,7 +167,9 @@ resource "aws_secretsmanager_secret_version" "db_credentials" {
 }
 
 resource "aws_db_instance" "postgres" {
-  identifier             = "bankingapp-postgres-v14"
+  # Changing the identifier forces a replacement of the RDS instance. This is
+  # necessary because an in-place major version downgrade is not allowed by AWS.
+  identifier             = "bankingapp-postgres-v14-2"
   engine                 = "postgres"
   engine_version         = "14"  # PostgreSQL 14
   instance_class         = "db.t3.micro"
