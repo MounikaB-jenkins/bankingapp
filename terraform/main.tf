@@ -171,7 +171,7 @@ resource "aws_db_instance" "postgres" {
   # necessary because an in-place major version downgrade is not allowed by AWS.
   identifier             = "bankingapp-postgres-v14-3"
   engine                 = "postgres"
-  engine_version         = "14"  # PostgreSQL 14
+  engine_version         = "16"  # PostgreSQL 16
   instance_class         = "db.t3.micro"
   allocated_storage      = 20
   db_name                = var.db_name
