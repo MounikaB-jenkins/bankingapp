@@ -27,7 +27,18 @@ done
 
 echo "--- Installing PostgreSQL 16 repo ---"
 # Install the official PGDG repository RPM. This provides up-to-date PostgreSQL packages.
-sudo yum install -y https://download.postgresql.org/pub/repos/yum/reporpms/AMAZONLINUX-2-x86_64/pgdg-amazonlinux-repo-latest.noarch.rpm
+PGDG_REPO_RPM="pgdg-amazonlinux-repo-latest.noarch.rpm"
+for i in {1..5}; do
+    wget -q "https://download.postgresql.org/pub/repos/yum/reporpms/AMAZONLINUX-2-x86_64/${PGDG_REPO_RPM}" -O "/tmp/${PGDG_REPO_RPM}" && break
+    echo "Attempt $i: PGDG Repo RPM download failed. Retrying in 10s..."
+    sleep 10
+done
+
+if [ ! -f "/tmp/${PGDG_REPO_RPM}" ]; then
+    echo "ERROR: PGDG Repo RPM download failed after multiple attempts." >&2
+    exit 1
+fi
+sudo yum localinstall -y "/tmp/${PGDG_REPO_RPM}"
 
 # Disable the default Amazon Linux postgresql module to avoid conflicts with the PGDG repo.
 sudo yum -y module disable postgresql
