@@ -273,7 +273,7 @@ if [ ! -f /etc/systemd/system/alertmanager.service ]; then
 fi
 
 # --- Node Exporter Installation ---
-# Install Node Exporter for self-monitoring. Runs as ec2-user.
+# Install Node Exporter for self-monitoring.
 cd /tmp
 NE_VERSION="1.6.1"
 NE_ARCHIVE="node_exporter-${NE_VERSION}.linux-amd64.tar.gz"
@@ -288,7 +288,12 @@ if [ ! -f "${NE_ARCHIVE}" ]; then
     echo "ERROR: Node Exporter download failed after multiple attempts." >&2
     exit 1
 fi
-sudo tar -xzf "${NE_ARCHIVE}" -C /usr/local
+
+if ! sudo tar -xzf "${NE_ARCHIVE}" -C /usr/local; then
+    echo "ERROR: Failed to extract Node Exporter archive." >&2
+    exit 1
+fi
+
 sudo mv "/usr/local/node_exporter-${NE_VERSION}.linux-amd64/node_exporter" /usr/local/bin/node_exporter
 sudo chmod +x /usr/local/bin/node_exporter
 
