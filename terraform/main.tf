@@ -179,9 +179,9 @@ resource "aws_db_instance" "postgres" {
   # For production, this should be 'false' and initialization should be handled from within the VPC.
   publicly_accessible    = true
   # A backup_retention_period > 0 enables Point-in-Time Recovery (PITR).
-  # 7 days is a reasonable default for production. Increase as needed.
-  # Note: This will incur costs for snapshot storage beyond the free tier.
-  backup_retention_period = 7
+  # 7 days is a reasonable default, but we are setting it to 1 to stay within
+  # the AWS Free Tier limits, which may not allow for longer retention periods.
+  backup_retention_period = 1
   # Create a final snapshot on deletion to prevent data loss.
   skip_final_snapshot    = false
   storage_encrypted      = true
