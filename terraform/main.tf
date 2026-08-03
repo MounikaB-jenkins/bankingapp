@@ -178,12 +178,19 @@ resource "aws_db_instance" "postgres" {
   # Set to true to allow initialization from outside the VPC (e.g., Jenkins).
   # For production, this should be 'false' and initialization should be handled from within the VPC.
   publicly_accessible    = true
-  skip_final_snapshot    = true # OK for demo, but should be 'false' in production.
-  backup_retention_period = 1  # Changed from 7 to 1 for AWS Free Tier compatibility
+  # A backup_retention_period > 0 enables Point-in-Time Recovery (PITR).
+  # 7 days is a reasonable default for production. Increase as needed.
+  # Note: This will incur costs for snapshot storage beyond the free tier.
+  backup_retention_period = 7
+  # Create a final snapshot on deletion to prevent data loss.
+  skip_final_snapshot    = false
   storage_encrypted      = true
   vpc_security_group_ids = [aws_security_group.db.id]
   db_subnet_group_name   = aws_db_subnet_group.default.name
-  apply_immediately      = true # OK for demo, but should be 'false' in production to apply changes during the maintenance window.
+  # Define specific windows for backups and maintenance to avoid performance impact during peak hours.
+  backup_window          = "03:00-04:00"
+  maintenance_window     = "sun:04:00-sun:05:00"
+  apply_immediately      = false # Apply changes during the next maintenance window.
 }
 
 resource "aws_iam_role" "app_instance_role" {
