@@ -36,7 +36,8 @@ echo "--- Upgrading pip ---"
 sudo python3 -m pip install --upgrade pip
 
 # Create a non-privileged user for the application
-sudo useradd --no-create-home --shell /bin/false bankingapp
+echo "--- Creating bankingapp user ---"
+id -u bankingapp &>/dev/null || sudo useradd --no-create-home --shell /bin/false bankingapp
 
 # Create app directory and set up a virtual environment
 sudo mkdir -p /opt/bankingapp
@@ -149,7 +150,9 @@ fi
 sudo systemctl enable nginx
 sudo systemctl enable node_exporter
 
-sudo systemctl start bankingapp.service
+# Do NOT start bankingapp.service here. It depends on the DB_SECRET_ARN environment
+# variable which is only supplied via user_data at instance launch time.
+# The service will be started automatically on boot.
 sudo systemctl start nginx
 sudo systemctl start node_exporter
 

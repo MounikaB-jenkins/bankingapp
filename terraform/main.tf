@@ -190,7 +190,7 @@ resource "aws_db_instance" "postgres" {
   storage_encrypted      = true
   vpc_security_group_ids = [aws_security_group.db.id]
   db_subnet_group_name   = aws_db_subnet_group.default.name
-  apply_immediately      = true
+  apply_immediately      = true # OK for demo, but should be 'false' in production to apply changes during the maintenance window.
 }
 
 resource "aws_iam_role" "app_instance_role" {
