@@ -25,9 +25,17 @@ for i in {1..5}; do
     sudo pkill -9 -f yum || true; sudo rm -f /var/run/yum.pid; sleep 10
 done
 
+echo "--- Installing PostgreSQL 16 repo ---"
+# Install the official PGDG repository RPM. This provides up-to-date PostgreSQL packages.
+sudo yum install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+
+# Disable the default Amazon Linux postgresql module to avoid conflicts with the PGDG repo.
+sudo yum -y module disable postgresql
+
 echo "--- Installing other packages with retry ---"
 for i in {1..5}; do
-    timeout 300 sudo amazon-linux-extras install postgresql14 -y && sudo yum install -y python3-pip git awscli jq && break
+    # Install postgresql16 client from the new repo, along with other dependencies.
+    timeout 300 sudo yum install -y postgresql16 python3-pip git awscli jq && break
     echo "Attempt $i: Yum install failed, likely due to a lock. Killing processes and retrying in 10s..."
     sudo pkill -9 -f yum || true; sudo rm -f /var/run/yum.pid; sleep 10
 done
