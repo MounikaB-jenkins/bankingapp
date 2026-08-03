@@ -40,9 +40,6 @@ if [ ! -f "/tmp/${PGDG_REPO_RPM}" ]; then
 fi
 sudo yum localinstall -y "/tmp/${PGDG_REPO_RPM}"
 
-# Disable the default Amazon Linux postgresql module to avoid conflicts with the PGDG repo.
-sudo yum -y module disable postgresql
-
 echo "--- Installing other packages with retry ---"
 for i in {1..5}; do
     # Install postgresql16 client from the new repo, along with other dependencies.
