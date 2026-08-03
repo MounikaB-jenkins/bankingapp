@@ -167,7 +167,7 @@ resource "aws_secretsmanager_secret_version" "db_credentials" {
 }
 
 resource "aws_db_instance" "postgres" {
-  identifier             = "bankingapp-postgres"
+  identifier             = "bankingapp-postgres-v14"
   engine                 = "postgres"
   engine_version         = "14"  # PostgreSQL 14
   instance_class         = "db.t3.micro"
