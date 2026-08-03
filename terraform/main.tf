@@ -89,7 +89,7 @@ resource "aws_security_group" "monitoring" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-
+    cidr_blocks = var.trusted_ip_cidr
   }
 
   # Prometheus
