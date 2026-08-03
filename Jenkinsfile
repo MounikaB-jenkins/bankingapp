@@ -74,6 +74,7 @@ pipeline {
       steps {
         sh '''
           set -e
+          set -o pipefail
           cd packer
           packer init flask-app.pkr.hcl
           packer build -var "region=${AWS_REGION}" flask-app.pkr.hcl | tee flask-build.log
