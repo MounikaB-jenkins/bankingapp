@@ -27,7 +27,7 @@ done
 
 echo "--- Installing other packages with retry ---"
 for i in {1..5}; do
-    timeout 300 sudo amazon-linux-extras install postgresql16 -y && sudo yum install -y python3-pip git awscli jq && break
+    timeout 300 sudo amazon-linux-extras install postgresql14 -y && sudo yum install -y python3-pip git awscli jq && break
     echo "Attempt $i: Yum install failed, likely due to a lock. Killing processes and retrying in 10s..."
     sudo pkill -9 -f yum || true; sudo rm -f /var/run/yum.pid; sleep 10
 done
