@@ -122,7 +122,7 @@ def health():
             return jsonify({"status": "ok", "database": "connected"})
         else:
             # The get_db_connection function returned None
-            return jsonify({"status": "unhealthy", "reason": "Database connection could not be established after retries"}), 503
+            return jsonify({"status": "unhealthy", "reason": "Database connection could not be established"}), 503
     except Exception as e:
         # Any other exception during the check (e.g., failed query)
         return jsonify({"status": "unhealthy", "reason": f"Database check failed: {e}"}), 503
