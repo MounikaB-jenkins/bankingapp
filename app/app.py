@@ -2,6 +2,7 @@ import os
 import json
 import boto3
 import psycopg2
+import time # Import time for sleep
 from flask import Flask, jsonify, render_template, request, redirect, url_for, session, flash
 from prometheus_client import make_wsgi_app
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
@@ -18,27 +19,39 @@ app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {
 
 def get_db_connection():
     """Connects to the database using credentials from AWS Secrets Manager."""
-    try:
-        secret_name = os.environ.get("DB_SECRET_ARN")
-        if not secret_name:
-            raise ValueError("DB_SECRET_ARN environment variable not set.")
-
-        session_boto = boto3.session.Session()
-        client = session_boto.client(service_name='secretsmanager')
-        get_secret_value_response = client.get_secret_value(SecretId=secret_name)
-        secret = json.loads(get_secret_value_response['SecretString'])
-
-        conn = psycopg2.connect(
-            host=secret['host'],
-            dbname=secret['dbname'],
-            user=secret['username'],
-            password=secret['password'],
-            port=secret.get('port', 5432)
-        )
-        return conn
-    except Exception as e:
-        print(f"Database connection failed: {e}")
+    max_retries = 5
+    retry_delay_seconds = 5
+    
+    secret_name = os.environ.get("DB_SECRET_ARN")
+    if not secret_name:
+        print("ERROR: DB_SECRET_ARN environment variable not set.")
         return None
+
+    for i in range(max_retries):
+        try:
+            session_boto = boto3.session.Session()
+            client = session_boto.client(service_name='secretsmanager')
+            get_secret_value_response = client.get_secret_value(SecretId=secret_name)
+            secret = json.loads(get_secret_value_response['SecretString'])
+
+            conn = psycopg2.connect(
+                host=secret['host'],
+                dbname=secret['dbname'],
+                user=secret['username'],
+                password=secret['password'],
+                port=secret.get('port', 5432),
+                connect_timeout=5 # Add a connection timeout
+            )
+            print("Successfully connected to the database.")
+            return conn
+        except Exception as e:
+            print(f"Database connection attempt {i+1}/{max_retries} failed: {e}")
+            if i < max_retries - 1:
+                print(f"Retrying in {retry_delay_seconds} seconds...")
+                time.sleep(retry_delay_seconds)
+            else:
+                print("Max database connection retries reached. Giving up.")
+                return None
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -109,7 +122,7 @@ def health():
             return jsonify({"status": "ok", "database": "connected"})
         else:
             # The get_db_connection function returned None
-            return jsonify({"status": "unhealthy", "reason": "Database connection could not be established"}), 503
+            return jsonify({"status": "unhealthy", "reason": "Database connection could not be established after retries"}), 503
     except Exception as e:
         # Any other exception during the check (e.g., failed query)
         return jsonify({"status": "unhealthy", "reason": f"Database check failed: {e}"}), 503
