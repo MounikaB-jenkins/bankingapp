@@ -28,7 +28,7 @@ This project creates a banking-style AWS reference architecture on the free tier
    ```bash
    cp terraform/terraform.tfvars.example terraform/terraform.tfvars
    ```
-2. **CRITICAL:** The Terraform configuration has been modified to allow access from any IP address (`0.0.0.0/0`) for SSH, monitoring, and database initialization. This is highly insecure and should only be used for temporary debugging.
+2. **CRITICAL:** Edit `terraform/terraform.tfvars` and set `trusted_ip_cidr` to a list of public IP addresses that need access (e.g., your current local machine's public IP, your Jenkins agent's NAT Gateway public IP). You can find your current public IP by searching "what is my IP" in Google. The format must be `["ip_one/32", "ip_two/32"]`. This is essential for security.
 3. Run:
    ```bash
    bash scripts/deploy.sh
@@ -49,4 +49,5 @@ This project creates a banking-style AWS reference architecture on the free tier
 - The default region is eu-central-1.
 - The default VPC and subnet values are set to the requested values from the earlier deployment context.
 - The Jenkins pipeline automatically handles passing AMI IDs to Terraform. For manual deployment with `deploy.sh`, you will need to update `terraform.tfvars` yourself.
-- **Security Warning:** The security groups for SSH, monitoring, and the database are currently open to the world (`0.0.0.0/0`). For any real-world use, you should revert this change and use a specific, trusted IP list.
+- **Infrastructure Requirement:** For the database initialization to succeed from an external Jenkins agent, the subnets provided for the `aws_db_subnet_group` must be **public subnets** (i.e., their route tables must have a route to an Internet Gateway).
+- **Security Warning:** The default `trusted_ip_cidr` in `variables.tf` is `["0.0.0.0/0"]`, which is insecure. Always override this in `terraform.tfvars` to lock down SSH, monitoring, ALB, and database initialization access to your specific IP addresses.

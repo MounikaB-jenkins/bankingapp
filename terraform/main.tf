@@ -31,8 +31,7 @@ resource "aws_security_group" "app" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    # WARNING: This allows SSH access from any IP address.
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = var.trusted_ip_cidr
   }
 
   ingress {
@@ -68,8 +67,7 @@ resource "aws_security_group" "alb" {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    # WARNING: This allows access from any IP address.
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = var.trusted_ip_cidr
   }
 
   egress {
@@ -91,8 +89,7 @@ resource "aws_security_group" "monitoring" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    # WARNING: This allows SSH access from any IP address.
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = var.trusted_ip_cidr
   }
 
   # Prometheus
@@ -100,8 +97,7 @@ resource "aws_security_group" "monitoring" {
     from_port   = 9090
     to_port     = 9090
     protocol    = "tcp"
-    # WARNING: This allows Prometheus access from any IP address.
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = var.trusted_ip_cidr
   }
 
   # Alertmanager
@@ -109,8 +105,7 @@ resource "aws_security_group" "monitoring" {
     from_port   = 9093
     to_port     = 9093
     protocol    = "tcp"
-    # WARNING: This allows Alertmanager access from any IP address.
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = var.trusted_ip_cidr
   }
 
   # Grafana
@@ -118,8 +113,7 @@ resource "aws_security_group" "monitoring" {
     from_port   = 3000
     to_port     = 3000
     protocol    = "tcp"
-    # WARNING: This allows Grafana access from any IP address.
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = var.trusted_ip_cidr
   }
 
   egress {
@@ -141,8 +135,7 @@ resource "aws_security_group" "db" {
     to_port         = 5432
     protocol        = "tcp"
     security_groups = [aws_security_group.app.id]
-    # WARNING: This allows database initialization access from any IP address.
-    cidr_blocks     = ["0.0.0.0/0"]
+    cidr_blocks     = var.trusted_ip_cidr
   }
 
   egress {
