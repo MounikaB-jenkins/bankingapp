@@ -25,25 +25,11 @@ for i in {1..5}; do
     sudo pkill -9 -f yum || true; sudo rm -f /var/run/yum.pid; sleep 10
 done
 
-echo "--- Installing PostgreSQL 16 repo ---"
-# Install the official PGDG repository RPM. This provides up-to-date PostgreSQL packages.
-PGDG_REPO_RPM="pgdg-amazonlinux-repo-latest.noarch.rpm"
-for i in {1..5}; do
-    wget -q "https://download.postgresql.org/pub/repos/yum/reporpms/AMAZONLINUX-2-x86_64/${PGDG_REPO_RPM}" -O "/tmp/${PGDG_REPO_RPM}" && break
-    echo "Attempt $i: PGDG Repo RPM download failed. Retrying in 10s..."
-    sleep 10
-done
-
-if [ ! -f "/tmp/${PGDG_REPO_RPM}" ]; then
-    echo "ERROR: PGDG Repo RPM download failed after multiple attempts." >&2
-    exit 1
-fi
-sudo yum localinstall -y "/tmp/${PGDG_REPO_RPM}"
-
 echo "--- Installing other packages with retry ---"
 for i in {1..5}; do
-    # Install postgresql16 client from the new repo, along with other dependencies.
-    timeout 300 sudo yum install -y postgresql16 python3-pip git awscli jq && break
+    # Install postgresql14 client and other dependencies.
+    # amazon-linux-extras is the standard way to install specific package versions on Amazon Linux 2.
+    timeout 300 sudo amazon-linux-extras install postgresql14 -y && sudo yum install -y python3-pip git awscli jq && break
     echo "Attempt $i: Yum install failed, likely due to a lock. Killing processes and retrying in 10s..."
     sudo pkill -9 -f yum || true; sudo rm -f /var/run/yum.pid; sleep 10
 done
