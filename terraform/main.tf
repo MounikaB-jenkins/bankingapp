@@ -283,6 +283,12 @@ resource "aws_lb_target_group" "app" {
   health_check {
     path = "/health"
     matcher = "200"
+    # Give the app more time to start and connect to the DB before failing the health check.
+    # The default timeout of 5s is too aggressive for an app with dependencies.
+    interval            = 30
+    timeout             = 15
+    healthy_threshold   = 3
+    unhealthy_threshold = 3
   }
 }
 
@@ -309,6 +315,7 @@ resource "aws_launch_template" "app" {
 
   user_data = base64encode(templatefile("${path.module}/user_data_app.sh.tpl", {
     db_secret_arn = aws_secretsmanager_secret.db_credentials.arn
+    aws_region    = var.region
   }))
 
   tag_specifications {
