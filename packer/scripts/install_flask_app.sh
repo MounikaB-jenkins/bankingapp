@@ -47,8 +47,8 @@ sudo chown -R bankingapp:bankingapp /opt/bankingapp
 sudo -u bankingapp python3 -m venv /opt/bankingapp/venv
 
 # Install Python dependencies into the virtual environment
-sudo cp /tmp/bankingapp-app/requirements.txt /tmp/
-sudo /opt/bankingapp/venv/bin/pip install -r /tmp/requirements.txt
+# Run pip install as the 'bankingapp' user to ensure correct file permissions inside the venv
+sudo -u bankingapp /opt/bankingapp/venv/bin/pip install -r /tmp/bankingapp-app/requirements.txt
 
 # Deploy the application code
 sudo cp -r /tmp/bankingapp-app /opt/bankingapp/app
