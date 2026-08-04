@@ -307,7 +307,13 @@ resource "aws_launch_template" "app" {
   name_prefix   = "bankingapp-app-"
   image_id      = var.flask_ami_id
   instance_type = var.instance_type
-  vpc_security_group_ids = [aws_security_group.app.id]
+  # vpc_security_group_ids is deprecated when network_interfaces is used.
+  # We add this block to ensure instances get a public IP, allowing them to
+  # reach the AWS Secrets Manager endpoint.
+  network_interfaces {
+    associate_public_ip_address = true
+    security_groups             = [aws_security_group.app.id]
+  }
 
   iam_instance_profile {
     name = aws_iam_instance_profile.app_instance_profile.name
