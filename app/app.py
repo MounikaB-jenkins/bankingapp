@@ -26,11 +26,22 @@ def get_db_connection():
     if not secret_name:
         print("ERROR: DB_SECRET_ARN environment variable not set.")
         return None
+    
+    aws_region = os.environ.get("AWS_REGION")
+    if not aws_region:
+        print("ERROR: AWS_REGION environment variable not set.")
+        return None
 
     for i in range(max_retries):
         try:
             session_boto = boto3.session.Session()
-            client = session_boto.client(service_name='secretsmanager')
+            # Explicitly provide the region to the client to avoid ambiguity.
+            # This is the most robust way to ensure boto3 connects to the correct region,
+            # especially when running inside an EC2 instance.
+            client = session_boto.client(
+                service_name='secretsmanager',
+                region_name=aws_region
+            )
             get_secret_value_response = client.get_secret_value(SecretId=secret_name)
             secret = json.loads(get_secret_value_response['SecretString'])
 
