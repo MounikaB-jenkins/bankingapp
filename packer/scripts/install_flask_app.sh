@@ -114,8 +114,13 @@ server {
     }
 }
 EOF
-# Remove default Nginx config to avoid port 80 conflicts
-sudo rm -f /etc/nginx/conf.d/default.conf
+# Remove default Nginx config to avoid port 80 conflicts.
+# Use -f to prevent errors if the file doesn't exist on a different base AMI.
+sudo rm -f /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/nginx.conf.default
+
+# Allow Nginx to act as a reverse proxy by enabling network connections.
+# This is required by SELinux on Amazon Linux 2.
+sudo setsebool -P httpd_can_network_connect 1
 
 # Create Flask app systemd service
 sudo tee /etc/systemd/system/bankingapp.service >/dev/null <<'EOF'
