@@ -50,9 +50,10 @@ sudo -u bankingapp python3 -m venv /opt/bankingapp/venv
 # Run pip install as the 'bankingapp' user to ensure correct file permissions inside the venv
 sudo -u bankingapp /opt/bankingapp/venv/bin/pip install -r /tmp/bankingapp-app/requirements.txt
 
-# Deploy the application code
-sudo cp -r /tmp/bankingapp-app /opt/bankingapp/app
-sudo chown -R bankingapp:bankingapp /opt/bankingapp/app
+# Deploy the application code to a 'src' directory to avoid module name conflicts.
+sudo mkdir -p /opt/bankingapp/src
+sudo cp -r /tmp/bankingapp-app/* /opt/bankingapp/src/
+sudo chown -R bankingapp:bankingapp /opt/bankingapp/src
 
 # --- Node Exporter Installation ---
 # Install Node Exporter for metrics scraping. Runs as ec2-user.
@@ -123,7 +124,7 @@ Description=BankingApp Flask Service
 After=network.target
 
 [Service]
-WorkingDirectory=/opt/bankingapp/app
+WorkingDirectory=/opt/bankingapp/src
 EnvironmentFile=/etc/bankingapp.env
 ExecStart=/opt/bankingapp/venv/bin/gunicorn --workers 1 --bind 127.0.0.1:8000 app:app
 Restart=always
