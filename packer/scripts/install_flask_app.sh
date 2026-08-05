@@ -120,7 +120,10 @@ sudo rm -f /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/nginx.conf.default
 
 # Allow Nginx to act as a reverse proxy by enabling network connections.
 # This is required by SELinux on Amazon Linux 2.
-sudo setsebool -P httpd_can_network_connect 1
+# Only run this command if SELinux is not disabled.
+if [ "$(getenforce)" != "Disabled" ]; then
+    sudo setsebool -P httpd_can_network_connect 1
+fi
 
 # Create Flask app systemd service
 sudo tee /etc/systemd/system/bankingapp.service >/dev/null <<'EOF'
