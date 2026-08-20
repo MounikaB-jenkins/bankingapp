@@ -16,6 +16,31 @@ provider "aws" {
   region = var.region
 }
 
+# Optional VPC/subnet creation when migrating to a new account
+resource "aws_vpc" "default" {
+  count     = var.create_vpc ? 1 : 0
+  cidr_block = var.vpc_cidr
+  tags = {
+    Name    = "bankingapp-vpc"
+    Project = "BankingApp"
+  }
+}
+
+resource "aws_subnet" "private" {
+  count = var.create_vpc ? length(var.subnet_cidrs) : 0
+  vpc_id = aws_vpc.default[0].id
+  cidr_block = var.subnet_cidrs[count.index]
+  tags = {
+    Name    = "bankingapp-subnet-${count.index + 1}"
+    Project = "BankingApp"
+  }
+}
+
+locals {
+  effective_vpc_id = var.create_vpc ? aws_vpc.default[0].id : var.vpc_id
+  effective_subnet_ids = var.create_vpc ? [for s in aws_subnet.private : s.id] : var.subnet_ids
+}
+
 resource "random_password" "db_password" {
   length           = 24
   special          = true
@@ -25,7 +50,7 @@ resource "random_password" "db_password" {
 resource "aws_security_group" "app" {
   name        = "bankingapp-app-sg"
   description = "Allow app traffic"
-  vpc_id      = var.vpc_id
+  vpc_id      = local.effective_vpc_id
 
   ingress {
     from_port   = 22
@@ -61,7 +86,7 @@ resource "aws_security_group" "app" {
 resource "aws_security_group" "alb" {
   name        = "bankingapp-alb-sg"
   description = "Allow HTTP traffic to ALB"
-  vpc_id      = var.vpc_id
+  vpc_id      = local.effective_vpc_id
 
   ingress {
     from_port   = 80
@@ -89,7 +114,7 @@ resource "aws_security_group" "alb" {
 resource "aws_security_group" "monitoring" {
   name        = "bankingapp-monitoring-sg"
   description = "Allow access to monitoring services"
-  vpc_id      = var.vpc_id
+  vpc_id      = local.effective_vpc_id
 
   # SSH
   ingress {
@@ -134,7 +159,7 @@ resource "aws_security_group" "monitoring" {
 resource "aws_security_group" "db" {
   name        = "bankingapp-db-sg"
   description = "Allow PostgreSQL access from the app tier"
-  vpc_id      = var.vpc_id
+  vpc_id      = local.effective_vpc_id
 
   # Allow access from the app instances and the trusted IP for initialization
   ingress {
@@ -155,7 +180,7 @@ resource "aws_security_group" "db" {
 
 resource "aws_db_subnet_group" "default" {
   name       = "bankingapp-db-subnet-group"
-  subnet_ids = var.subnet_ids
+  subnet_ids = local.effective_subnet_ids
 }
 
 resource "aws_secretsmanager_secret" "db_credentials" {
@@ -279,14 +304,14 @@ resource "aws_lb" "app" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
-  subnets            = var.subnet_ids
+  subnets            = local.effective_subnet_ids
 }
 
 resource "aws_lb_target_group" "app" {
   name     = "bankingapp-tg"
   port     = 8080
   protocol = "HTTP"
-  vpc_id   = var.vpc_id
+  vpc_id   = local.effective_vpc_id
   health_check {
     path = "/health"
     matcher = "200"
@@ -355,7 +380,7 @@ resource "aws_autoscaling_group" "app" {
   min_size            = 1
   max_size            = 2
   desired_capacity    = 2
-  vpc_zone_identifier = var.subnet_ids
+  vpc_zone_identifier = local.effective_subnet_ids
   target_group_arns   = [aws_lb_target_group.app.arn]
   health_check_type   = "ELB"
 
@@ -374,7 +399,7 @@ resource "aws_autoscaling_group" "app" {
 resource "aws_instance" "monitoring" {
   ami                         = var.monitoring_ami_id
   instance_type               = var.monitoring_instance_type
-  subnet_id                   = var.subnet_ids[0]
+  subnet_id                   = local.effective_subnet_ids[0]
   vpc_security_group_ids      = [aws_security_group.monitoring.id]
   associate_public_ip_address = true
 

@@ -22,6 +22,24 @@ variable "subnet_ids" {
   default     = [] # e.g. ["subnet-12345678", "subnet-abcdefgh"]
 }
 
+variable "create_vpc" {
+  description = "When true, Terraform will create a new VPC and subnets instead of using existing ones"
+  type        = bool
+  default     = false
+}
+
+variable "vpc_cidr" {
+  description = "CIDR block for the created VPC"
+  type        = string
+  default     = "10.0.0.0/16"
+}
+
+variable "subnet_cidrs" {
+  description = "List of CIDR blocks for subnets to create when create_vpc=true"
+  type        = list(string)
+  default     = ["10.0.1.0/24", "10.0.2.0/24"]
+}
+
 variable "flask_ami_id" {
   description = "AMI ID built by Packer for the Flask app"
   type        = string
