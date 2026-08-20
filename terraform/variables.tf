@@ -13,13 +13,13 @@ variable "region" {
 variable "vpc_id" {
   description = "Existing VPC ID"
   type        = string
-  default     = "vpc-088237085ff583c8e"
+  default     = "" # e.g. "vpc-1234567890abcdef0"
 }
 
 variable "subnet_ids" {
   description = "Existing subnet IDs"
   type        = list(string)
-  default     = ["subnet-0e2b2454962fb5acf"]
+  default     = [] # e.g. ["subnet-12345678", "subnet-abcdefgh"]
 }
 
 variable "flask_ami_id" {
