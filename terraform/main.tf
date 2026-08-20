@@ -31,11 +31,44 @@ resource "aws_vpc" "default" {
   }
 }
 
+# Internet Gateway for public access (needed for ALB and publicly accessible RDS)
+resource "aws_internet_gateway" "gw" {
+  count  = var.create_vpc ? 1 : 0
+  vpc_id = aws_vpc.default[0].id
+  tags = {
+    Name    = "bankingapp-igw"
+    Project = "BankingApp"
+  }
+}
+
+# Route table with default route to internet gateway
+resource "aws_route_table" "public" {
+  count  = var.create_vpc ? 1 : 0
+  vpc_id = aws_vpc.default[0].id
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.gw[0].id
+  }
+  tags = {
+    Name    = "bankingapp-public-rt"
+    Project = "BankingApp"
+  }
+}
+
+# Associate route table with subnets
+resource "aws_route_table_association" "public" {
+  count          = var.create_vpc ? length(var.subnet_cidrs) : 0
+  subnet_id      = aws_subnet.private[count.index].id
+  route_table_id = aws_route_table.public[0].id
+}
+
 resource "aws_subnet" "private" {
   count             = var.create_vpc ? length(var.subnet_cidrs) : 0
   vpc_id            = aws_vpc.default[0].id
   cidr_block        = var.subnet_cidrs[count.index]
   availability_zone = element(data.aws_availability_zones.available.names, count.index)
+  # Required for ALB and publicly accessible RDS
+  map_public_ip_on_launch = true
   tags = {
     Name    = "bankingapp-subnet-${count.index + 1}"
     Project = "BankingApp"
