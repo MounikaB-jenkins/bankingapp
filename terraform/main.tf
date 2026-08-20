@@ -202,13 +202,20 @@ resource "aws_security_group" "db" {
   description = "Allow PostgreSQL access from the app tier"
   vpc_id      = local.effective_vpc_id
 
-  # Allow access from the app instances and the trusted IP for initialization
+  # Allow access from the app instances
   ingress {
     from_port       = 5432
     to_port         = 5432
     protocol        = "tcp"
     security_groups = [aws_security_group.app.id]
-    cidr_blocks     = var.trusted_ip_cidr
+  }
+
+  # Allow access from trusted IP for initialization (e.g., Jenkins)
+  ingress {
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = var.trusted_ip_cidr
   }
 
   egress {
