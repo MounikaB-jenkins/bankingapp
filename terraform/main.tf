@@ -186,7 +186,7 @@ resource "aws_db_instance" "postgres" {
   password               = random_password.db_password.result
   # Set to true to allow initialization from outside the VPC (e.g., Jenkins).
   # For production, this should be 'false' and initialization should be handled from within the VPC.
-  publicly_accessible    = false
+  publicly_accessible    = true
   # A backup_retention_period > 0 enables Point-in-Time Recovery (PITR).
   # 7 days is a reasonable default, but we are setting it to 1 to stay within
   # the AWS Free Tier limits, which may not allow for longer retention periods.

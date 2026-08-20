@@ -5,23 +5,20 @@ set -euo pipefail
 sudo systemctl stop yum-cron || true
 sudo systemctl disable yum-cron || true
 
-# Kill any lingering yum process and remove the lock file to take control.
-echo "Forcefully stopping any existing yum processes..."
-sudo pkill -9 -f yum || true
-sudo rm -f /var/run/yum.pid
-
 echo "--- Running yum update with retry ---"
 for i in {1..5}; do
-    timeout 300 sudo yum update -y && break
-    echo "Attempt $i: Yum update failed, likely due to a lock. Killing processes and retrying in 10s..."
-    sudo pkill -9 -f yum || true; sudo rm -f /var/run/yum.pid; sleep 10
+    if timeout 300 sudo yum update -y; then break; fi
+    echo "Attempt $i: Yum update failed, likely due to a lock. Retrying in 15s..."
+    sleep 15
+    if [ "$i" -eq 5 ]; then echo "ERROR: yum update failed after multiple retries." >&2; exit 1; fi
 done
 
 echo "--- Installing dependencies with retry ---"
 for i in {1..5}; do
-    timeout 300 sudo yum install -y wget tar jq && break
-    echo "Attempt $i: Yum install failed, likely due to a lock. Killing processes and retrying in 10s..."
-    sudo pkill -9 -f yum || true; sudo rm -f /var/run/yum.pid; sleep 10
+    if timeout 300 sudo yum install -y wget tar jq; then break; fi
+    echo "Attempt $i: Yum install failed, likely due to a lock. Retrying in 15s..."
+    sleep 15
+    if [ "$i" -eq 5 ]; then echo "ERROR: Dependency installation failed after multiple retries." >&2; exit 1; fi
 done
 
 cd /tmp
