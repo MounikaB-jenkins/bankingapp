@@ -16,6 +16,11 @@ provider "aws" {
   region = var.region
 }
 
+# Get available AZs for subnet distribution
+data "aws_availability_zones" "available" {
+  state = "available"
+}
+
 # Optional VPC/subnet creation when migrating to a new account
 resource "aws_vpc" "default" {
   count     = var.create_vpc ? 1 : 0
@@ -27,9 +32,10 @@ resource "aws_vpc" "default" {
 }
 
 resource "aws_subnet" "private" {
-  count = var.create_vpc ? length(var.subnet_cidrs) : 0
-  vpc_id = aws_vpc.default[0].id
-  cidr_block = var.subnet_cidrs[count.index]
+  count             = var.create_vpc ? length(var.subnet_cidrs) : 0
+  vpc_id            = aws_vpc.default[0].id
+  cidr_block        = var.subnet_cidrs[count.index]
+  availability_zone = element(data.aws_availability_zones.available.names, count.index)
   tags = {
     Name    = "bankingapp-subnet-${count.index + 1}"
     Project = "BankingApp"
@@ -228,7 +234,8 @@ resource "aws_db_instance" "postgres" {
 }
 
 resource "aws_iam_role" "app_instance_role" {
-  name = "bankingapp-app-instance-role"
+  name        = "bankingapp-app-instance-role"
+  description = "IAM role for BankingApp application instances"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -264,7 +271,8 @@ resource "aws_iam_role_policy_attachment" "attach_secrets_policy" {
 }
 
 resource "aws_iam_role" "monitoring_instance_role" {
-  name = "bankingapp-monitoring-instance-role"
+  name        = "bankingapp-monitoring-instance-role"
+  description = "IAM role for BankingApp monitoring instance"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
