@@ -74,13 +74,13 @@ pipeline {
       steps {
         sh '''
           set -e
-          CREATE_VPC=$(grep -E "^[[:space:]]*create_vpc[[:space:]]*=" terraform/terraform.tfvars | grep -v "^#" | sed "s/^[^=]*=\s*//" | xargs)
+          CREATE_VPC=$(grep -E "^[[:space:]]*create_vpc[[:space:]]*=" terraform/terraform.tfvars | grep -v "^#" | sed "s/^[^=]*=[[:space:]]*//" | xargs)
           if [ "$CREATE_VPC" = "true" ]; then
             source ./scripts/create-default-vpc.sh
           else
-            VPC_ID=$(grep -E "^[[:space:]]*vpc_id[[:space:]]*=" terraform/terraform.tfvars | grep -v "^#" | sed "s/^[^=]*=\s*//;s/\"//g" | xargs)
-            SUBNET_IDS_RAW=$(grep -E "^[[:space:]]*subnet_ids[[:space:]]*=" terraform/terraform.tfvars | grep -v "^#" | sed "s/^[^=]*=\s*//")
-            SUBNET_ID=$(echo "$SUBNET_IDS_RAW" | tr -d '\["\] ' | cut -d, -f1)
+            VPC_ID=$(grep -E "^[[:space:]]*vpc_id[[:space:]]*=" terraform/terraform.tfvars | grep -v "^#" | sed "s/^[^=]*=[[:space:]]*//;s/\"//g" | xargs)
+            SUBNET_IDS_RAW=$(grep -E "^[[:space:]]*subnet_ids[[:space:]]*=" terraform/terraform.tfvars | grep -v "^#" | sed "s/^[^=]*=[[:space:]]*//")
+            SUBNET_ID=$(echo "$SUBNET_IDS_RAW" | tr -d '[" ]' | cut -d, -f1)
           fi
           echo "VPC_ID=$VPC_ID" > vpc_info.env
           echo "SUBNET_ID=$SUBNET_ID" >> vpc_info.env
