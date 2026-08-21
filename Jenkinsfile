@@ -149,7 +149,7 @@ pipeline {
             -var "region=${AWS_REGION}" \
             -var "create_vpc=false" \
             -var "vpc_id=$VPC_ID" \
-            -var "subnet_ids=[$SUBNET_ID]" \
+            -var "subnet_ids=[\"$SUBNET_ID\"]" \
             -var "flask_ami_id=$FLASK_AMI" \
             -var "monitoring_ami_id=$MONITORING_AMI"
         '''
