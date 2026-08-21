@@ -77,7 +77,7 @@ pipeline {
           set -o pipefail
           
           # Read Terraform config to determine if we need VPC
-          CREATE_VPC=$(grep -E "^\s*create_vpc\s*=" terraform/terraform.tfvars | cut -d"=" -f2 | tr -d " \t\r" | head -1)
+          CREATE_VPC=$(grep -E "^[[:space:]]*create_vpc[[:space:]]*=" terraform/terraform.tfvars | cut -d"=" -f2 | tr -d " \t\r" | head -1)
           
           VPC_ID=""
           SUBNET_ID=""
@@ -95,8 +95,8 @@ pipeline {
             cd ../packer
           else
             # Use existing VPC - must be provided via environment or tfvars
-            VPC_ID=$(grep -E "^\s*vpc_id\s*=" terraform/terraform.tfvars | cut -d"=" -f2 | tr -d " \t\r\"'" | head -1)
-            SUBNET_IDS=$(grep -E "^\s*subnet_ids\s*=" terraform/terraform.tfvars | cut -d"=" -f2 | tr -d " \t\r\"'[]" | tr ',' ' ')
+            VPC_ID=$(grep -E "^[[:space:]]*vpc_id[[:space:]]*=" terraform/terraform.tfvars | cut -d"=" -f2 | tr -d " \t\r\"'" | head -1)
+            SUBNET_IDS=$(grep -E "^[[:space:]]*subnet_ids[[:space:]]*=" terraform/terraform.tfvars | cut -d"=" -f2 | tr -d " \t\r\"'[]" | tr ',' ' ')
             SUBNET_ID=$(echo $SUBNET_IDS | awk '{print $1}')
           fi
           
