@@ -227,12 +227,14 @@ resource "aws_security_group" "db" {
 }
 
 resource "aws_db_subnet_group" "default" {
-  name       = "bankingapp-db-subnet-group"
-  subnet_ids = local.effective_subnet_ids
+  name_prefix = "bankingapp-db-subnet-group-"
+  subnet_ids  = local.effective_subnet_ids
+  # Using name_prefix avoids conflicts with existing DB subnet groups
 }
 
 resource "aws_secretsmanager_secret" "db_credentials" {
-  name = "bankingapp/rds/credentials"
+  name_prefix = "bankingapp/rds/credentials-"
+  # Using name_prefix avoids conflicts with existing scheduled-for-deletion secrets
 }
 
 resource "aws_secretsmanager_secret_version" "db_credentials" {
@@ -350,7 +352,7 @@ resource "aws_iam_role_policy_attachment" "attach_ec2_discovery_policy" {
 }
 
 resource "aws_lb" "app" {
-  name               = "bankingapp-alb"
+  name_prefix        = "bankingapp-alb-"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
@@ -358,10 +360,10 @@ resource "aws_lb" "app" {
 }
 
 resource "aws_lb_target_group" "app" {
-  name     = "bankingapp-tg"
-  port     = 8080
-  protocol = "HTTP"
-  vpc_id   = local.effective_vpc_id
+  name_prefix = "bankingapp-tg-"
+  port        = 8080
+  protocol    = "HTTP"
+  vpc_id      = local.effective_vpc_id
   health_check {
     path = "/health"
     matcher = "200"
