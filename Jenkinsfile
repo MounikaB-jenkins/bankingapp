@@ -144,6 +144,9 @@ pipeline {
           source ../vpc_info.env
           source ../ami_ids.env
           
+          # Clean up any existing resources that might conflict
+          terraform destroy -auto-approve -var "region=${AWS_REGION}" || true
+          
           # Deploy with create_vpc=false since VPC already exists from Prepare VPC stage
           cat > terraform.tfvars.auto <<EOF
 region = "${AWS_REGION}"
