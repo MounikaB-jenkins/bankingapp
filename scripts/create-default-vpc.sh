@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REGION=${1:-"eu-central-1"}
-VPC_NAME=${2:-"packer-default-vpc"}
+REGION=${1:- "eu-central-1"}
+VPC_NAME=${2:- "packer-default-vpc"}
 
 echo "Creating default VPC in region: $REGION"
 
@@ -25,12 +25,13 @@ AZS=$(aws ec2 describe-availability-zones --region $REGION --query "Availability
 
 # Create subnets in each AZ
 SUBNET_IDS=()
-for i in $(seq 0 $(echo $AZS | wc -w | tr -d ' ')); do
-  AZ=$(echo $AZS | awk "{print \$"$(($i+1))"}")
+AZ_ARRAY=($AZS)
+for i in "${!AZ_ARRAY[@]}"; do
+  AZ="${AZ_ARRAY[$i]}"
   SUBNET_CIDR="10.0.$((i+1)).0/24"
   SUBNET_ID=$(aws ec2 create-subnet --vpc-id $VPC_ID --cidr-block $SUBNET_CIDR --availability-zone $AZ --region $REGION --query "Subnet.SubnetId" --output text)
   SUBNET_IDS+=($SUBNET_ID)
-  aws ec2 create-tags --resources $SUBNET_ID --tags Key=Name,Value="${VPC_NAME}-subnet-$(($i+1))" --region $REGION
+  aws ec2 create-tags --resources $SUBNET_ID --tags Key=Name,Value="${VPC_NAME}-subnet-$((i+1))" --region $REGION
   echo "Created subnet $SUBNET_ID in AZ $AZ"
 done
 
@@ -45,13 +46,18 @@ for SUBNET_ID in "${SUBNET_IDS[@]}"; do
   aws ec2 modify-subnet-attribute --subnet-id $SUBNET_ID --map-public-ip-on-launch --region $REGION
 done
 
+# Export variables for parent shell to use
+export VPC_ID
+SUBNET_ID=${SUBNET_IDS[0]}
+export SUBNET_ID
+
 # Output environment variables for Jenkins
 echo ""
 echo "=== VPC Configuration for Packer ==="
 echo "VPC_ID=$VPC_ID"
-echo "SUBNET_ID=${SUBNET_IDS[0]}"
+echo "SUBNET_ID=$SUBNET_ID"
 echo "REGION=$REGION"
 echo ""
 echo "Use these in Jenkins:"
 echo "export VPC_ID=$VPC_ID"
-echo "export SUBNET_ID=${SUBNET_IDS[0]}"
+echo "export SUBNET_ID=$SUBNET_ID"

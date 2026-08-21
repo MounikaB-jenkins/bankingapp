@@ -74,59 +74,14 @@ pipeline {
       steps {
         sh '''
           set -e
-          set -o pipefail
-          
-          # Read settings from terraform.tfvars
-          CREATE_VPC=$(grep -E "^[[:space:]]*create_vpc[[:space:]]*=" terraform/terraform.tfvars | cut -d"=" -f2 | tr -d " \t\r" | head -1)
-          
+          CREATE_VPC=$(grep -E "^[[:space:]]*create_vpc[[:space:]]*=" terraform/terraform.tfvars | grep -v "^#" | sed "s/^[^=]*=\s*//" | xargs)
           if [ "$CREATE_VPC" = "true" ]; then
-            # Create VPC with settings from terraform.tfvars
-            VPC_CIDR=$(grep -E "^[[:space:]]*vpc_cidr[[:space:]]*=" terraform/terraform.tfvars | cut -d"=" -f2 | tr -d " \t\r'\"" | head -1)
-            SUBNET_CIDRS=$(grep -E "^[[:space:]]*subnet_cidrs[[:space:]]*=" terraform/terraform.tfvars | cut -d"=" -f2 | tr -d " \t\r'\"[]" | tr ',' ' ')
-            
-            # Create VPC
-            VPC_ID=$(aws ec2 create-vpc --cidr-block ${VPC_CIDR:-10.0.0.0/16} --region ${AWS_REGION} --query "Vpc.VpcId" --output text)
-            aws ec2 create-tags --resources $VPC_ID --tags Key=Name,Value=bankingapp-vpc Key=Project,Value=BankingApp --region ${AWS_REGION}
-            
-            # Enable DNS settings (required for RDS)
-            aws ec2 modify-vpc-attribute --vpc-id $VPC_ID --enable-dns-hostnames '{"Value": true}' --region ${AWS_REGION}
-            aws ec2 modify-vpc-attribute --vpc-id $VPC_ID --enable-dns-support '{"Value": true}' --region ${AWS_REGION}
-            
-            # Create Internet Gateway
-            IGW_ID=$(aws ec2 create-internet-gateway --region ${AWS_REGION} --query "InternetGateway.InternetGatewayId" --output text)
-            aws ec2 attach-internet-gateway --vpc-id $VPC_ID --internet-gateway-id $IGW_ID --region ${AWS_REGION}
-            
-            # Create subnets
-            SUBNET_IDS=()
-            i=0
-            for cidr in $SUBNET_CIDRS; do
-              AZ=$(aws ec2 describe-availability-zones --region ${AWS_REGION} --query "AvailabilityZones[$i].ZoneName" --output text)
-              SUBNET_ID=$(aws ec2 create-subnet --vpc-id $VPC_ID --cidr-block $cidr --availability-zone $AZ --region ${AWS_REGION} --query "Subnet.SubnetId" --output text)
-              SUBNET_IDS+=($SUBNET_ID)
-              aws ec2 create-tags --resources $SUBNET_ID --tags Key=Name,Value="bankingapp-subnet-$((i+1))" Key=Project,Value=BankingApp --region ${AWS_REGION}
-              aws ec2 modify-subnet-attribute --subnet-id $SUBNET_ID --map-public-ip-on-launch --region ${AWS_REGION}
-              ((i++))
-            done
-            
-            # Create route table with default route to IGW
-            RTB_ID=$(aws ec2 create-route-table --vpc-id $VPC_ID --region ${AWS_REGION} --query "RouteTable.RouteTableId" --output text)
-            aws ec2 create-route --route-table-id $RTB_ID --destination-cidr-block 0.0.0.0/0 --gateway-id $IGW_ID --region ${AWS_REGION}
-            
-            # Associate route table with all subnets
-            for SUBNET_ID in "${SUBNET_IDS[@]}"; do
-              aws ec2 associate-route-table --route-table-id $RTB_ID --subnet-id $SUBNET_ID --region ${AWS_REGION}
-            done
-            
-            SUBNET_ID=${SUBNET_IDS[0]}
-            
+            source ./scripts/create-default-vpc.sh
           else
-            # Use existing VPC from terraform.tfvars
-            VPC_ID=$(grep -E "^[[:space:]]*vpc_id[[:space:]]*=" terraform/terraform.tfvars | cut -d"=" -f2 | tr -d " \t\r'" | head -1)
-            SUBNET_IDS=$(grep -E "^[[:space:]]*subnet_ids[[:space:]]*=" terraform/terraform.tfvars | cut -d"=" -f2 | tr -d " \t\r'[]" | tr ',' ' ')
-            SUBNET_ID=$(echo $SUBNET_IDS | awk '{print $1}')
+            VPC_ID=$(grep -E "^[[:space:]]*vpc_id[[:space:]]*=" terraform/terraform.tfvars | grep -v "^#" | sed "s/^[^=]*=\s*//;s/\"//g" | xargs)
+            SUBNET_IDS_RAW=$(grep -E "^[[:space:]]*subnet_ids[[:space:]]*=" terraform/terraform.tfvars | grep -v "^#" | sed "s/^[^=]*=\s*//")
+            SUBNET_ID=$(echo "$SUBNET_IDS_RAW" | tr -d '\["\] ' | cut -d, -f1)
           fi
-          
-          # Save for subsequent stages
           echo "VPC_ID=$VPC_ID" > vpc_info.env
           echo "SUBNET_ID=$SUBNET_ID" >> vpc_info.env
         '''
