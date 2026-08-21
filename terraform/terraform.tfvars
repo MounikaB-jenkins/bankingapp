@@ -5,7 +5,7 @@ trusted_ip_cidr = [
 ]
 
 # AWS Region
-region = "eu-west-1"
+region = "eu-central-1"
 
 # Create a new VPC/subnets in the target account instead of using existing ones
 create_vpc = true

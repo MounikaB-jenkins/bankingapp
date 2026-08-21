@@ -29,7 +29,7 @@ if [ "${CREATE_VPC:-true}" = "true" ]; then
   # Create VPC and subnets first to get IDs
   cd terraform
   terraform init
-  terraform apply -auto-approve -var "region=${AWS_REGION:-eu-west-1}" -var="create_vpc=true" -var-file=terraform.tfvars
+  terraform apply -auto-approve -var "region=${AWS_REGION:-eu-central-1}" -var="create_vpc=true" -var-file=terraform.tfvars
   
   # Extract VPC and Subnet IDs from Terraform outputs
   VPC_ID=$(terraform output -raw effective_vpc_id)
@@ -50,14 +50,14 @@ fi
 
 # Build AMIs with VPC configuration
 packer init flask-app.pkr.hcl
-packer build -var "region=${AWS_REGION:-eu-west-1}" -var "vpc_id=${VPC_ID}" -var "subnet_id=${SUBNET_ID}" flask-app.pkr.hcl
+packer build -var "region=${AWS_REGION:-eu-central-1}" -var "vpc_id=${VPC_ID}" -var "subnet_id=${SUBNET_ID}" flask-app.pkr.hcl
 
 packer init monitoring.pkr.hcl
-packer build -var "region=${AWS_REGION:-eu-west-1}" -var "vpc_id=${VPC_ID}" -var "subnet_id=${SUBNET_ID}" monitoring.pkr.hcl
+packer build -var "region=${AWS_REGION:-eu-central-1}" -var "vpc_id=${VPC_ID}" -var "subnet_id=${SUBNET_ID}" monitoring.pkr.hcl
 
 # Deploy infrastructure (only if using existing VPC)
 if [ "${CREATE_VPC:-false}" = "false" ]; then
   cd ../terraform
   terraform init
-  terraform apply -auto-approve -var "region=${AWS_REGION:-eu-west-1}" -var-file=terraform.tfvars
+  terraform apply -auto-approve -var "region=${AWS_REGION:-eu-central-1}" -var-file=terraform.tfvars
 fi

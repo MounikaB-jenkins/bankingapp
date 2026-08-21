@@ -1,22 +1,22 @@
 #!/usr/bin/env bash
-# Script to get VPC and Subnet IDs for eu-west-1
+# Script to get VPC and Subnet IDs for eu-central-1
 # Run this: ./scripts/get-aws-resources.sh
 
 echo "========================================="
-echo "AWS Resources in eu-west-1 for BankingApp"
+echo "AWS Resources in eu-central-1 for BankingApp"
 echo "========================================="
 echo ""
 
-echo "--- VPCs in eu-west-1 ---"
-aws ec2 describe-vpcs --region eu-west-1 --query 'Vpcs[*].[VpcId, CidrBlock, Tags[?Key==`Name`].Value | [0]]' --output table
+echo "--- VPCs in eu-central-1 ---"
+aws ec2 describe-vpcs --region eu-central-1 --query 'Vpcs[*].[VpcId, CidrBlock, Tags[?Key==`Name`].Value | [0]]' --output table
 echo ""
 
-echo "--- Subnets in eu-west-1 ---"
-aws ec2 describe-subnets --region eu-west-1 --query 'Subnets[*].[SubnetId, VpcId, AvailabilityZone, CidrBlock, Tags[?Key==`Name`].Value | [0]]' --output table
+echo "--- Subnets in eu-central-1 ---"
+aws ec2 describe-subnets --region eu-central-1 --query 'Subnets[*].[SubnetId, VpcId, AvailabilityZone, CidrBlock, Tags[?Key==`Name`].Value | [0]]' --output table
 echo ""
 
-echo "--- Security Groups in eu-west-1 ---"
-aws ec2 describe-security-groups --region eu-west-1 --query 'SecurityGroups[*].[GroupId, GroupName, VpcId, Description]' --output table
+echo "--- Security Groups in eu-central-1 ---"
+aws ec2 describe-security-groups --region eu-central-1 --query 'SecurityGroups[*].[GroupId, GroupName, VpcId, Description]' --output table
 echo ""
 
 echo "========================================="

@@ -7,7 +7,7 @@ variable "trusted_ip_cidr" {
 variable "region" {
   description = "AWS region"
   type        = string
-  default     = "eu-west-1"
+  default     = "eu-central-1"
 }
 
 variable "vpc_id" {
