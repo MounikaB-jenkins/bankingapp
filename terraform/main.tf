@@ -227,13 +227,12 @@ resource "aws_security_group" "db" {
 }
 
 resource "aws_db_subnet_group" "default" {
-  name_prefix = "bankingapp-db-subnet-group-"
+  name_prefix = "bankingapp-db-subnet-"
   subnet_ids  = local.effective_subnet_ids
-  # Using name_prefix avoids conflicts with existing DB subnet groups
 }
 
 resource "aws_secretsmanager_secret" "db_credentials" {
-  name_prefix = "bankingapp/rds/credentials-"
+  name_prefix = "bank-creds-"
   # Using name_prefix avoids conflicts with existing scheduled-for-deletion secrets
 }
 
@@ -352,7 +351,7 @@ resource "aws_iam_role_policy_attachment" "attach_ec2_discovery_policy" {
 }
 
 resource "aws_lb" "app" {
-  name_prefix        = "bankingapp-alb-"
+  name_prefix        = "bapp-alb-"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
@@ -360,7 +359,7 @@ resource "aws_lb" "app" {
 }
 
 resource "aws_lb_target_group" "app" {
-  name_prefix = "bankingapp-tg-"
+  name_prefix = "bapp-tg-"
   port        = 8080
   protocol    = "HTTP"
   vpc_id      = local.effective_vpc_id
