@@ -81,8 +81,8 @@ pipeline {
           
           if [ "$CREATE_VPC" = "true" ]; then
             # Create VPC with settings from terraform.tfvars
-            VPC_CIDR=$(grep -E "^[[:space:]]*vpc_cidr[[:space:]]*=" terraform/terraform.tfvars | cut -d"=" -f2 | tr -d " \t\r'" | head -1)
-            SUBNET_CIDRS=$(grep -E "^[[:space:]]*subnet_cidrs[[:space:]]*=" terraform/terraform.tfvars | cut -d"=" -f2 | tr -d " \t\r'[]" | tr ',' ' ')
+            VPC_CIDR=$(grep -E "^[[:space:]]*vpc_cidr[[:space:]]*=" terraform/terraform.tfvars | cut -d"=" -f2 | tr -d " \t\r'\"" | head -1)
+            SUBNET_CIDRS=$(grep -E "^[[:space:]]*subnet_cidrs[[:space:]]*=" terraform/terraform.tfvars | cut -d"=" -f2 | tr -d " \t\r'\"[]" | tr ',' ' ')
             
             # Create VPC
             VPC_ID=$(aws ec2 create-vpc --cidr-block ${VPC_CIDR:-10.0.0.0/16} --region ${AWS_REGION} --query "Vpc.VpcId" --output text)
