@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REGION=${1:- "eu-central-1"}
-VPC_NAME=${2:- "packer-default-vpc"}
+REGION=${1:-"eu-central-1"}
+VPC_NAME=${2:-"packer-default-vpc"}
 
 echo "Creating default VPC in region: $REGION"
 
