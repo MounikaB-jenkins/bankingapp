@@ -87,7 +87,7 @@ pipeline {
           fi
           echo "VPC_ID=$VPC_ID" > vpc_info.env
           echo "SUBNET_ID=$SUBNET_ID" >> vpc_info.env
-          echo "SUBNET_IDS=$SUBNET_IDS" >> vpc_info.env
+          echo "SUBNET_IDS=\"$SUBNET_IDS\"" >> vpc_info.env
         '''
       }
     }
