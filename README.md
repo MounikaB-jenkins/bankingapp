@@ -46,7 +46,7 @@ This project creates a banking-style AWS reference architecture on the free tier
    - initialize the database with sample data
 
 ## Notes
-- The default region is eu-central-1.
+- The default region is eu-west-1.
 - The default VPC and subnet values are set to the requested values from the earlier deployment context.
 - The Jenkins pipeline automatically handles passing AMI IDs to Terraform. For manual deployment with `deploy.sh`, you will need to update `terraform.tfvars` yourself.
 - **Infrastructure Requirement:** For the database initialization to succeed from an external Jenkins agent, the subnets provided for the `aws_db_subnet_group` must be **public subnets** (i.e., their route tables must have a route to an Internet Gateway).

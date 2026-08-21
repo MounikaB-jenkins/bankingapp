@@ -115,7 +115,7 @@ scrape_configs:
   - job_name: "flask-app"
     metrics_path: /metrics
     ec2_sd_configs:
-      - region: eu-central-1
+      - region: eu-west-1
         port: 8080
     relabel_configs:
       # Only scrape instances with the tag 'Project'='BankingApp'

@@ -23,10 +23,10 @@ pytest -q app/tests
 
 cd packer
 packer init flask-app.pkr.hcl
-packer build -var "region=${AWS_REGION:-eu-central-1}" flask-app.pkr.hcl
+packer build -var "region=${AWS_REGION:-eu-west-1}" flask-app.pkr.hcl
 packer init monitoring.pkr.hcl
-packer build -var "region=${AWS_REGION:-eu-central-1}" monitoring.pkr.hcl
+packer build -var "region=${AWS_REGION:-eu-west-1}" monitoring.pkr.hcl
 
 cd ../terraform
 terraform init
-terraform apply -auto-approve -var "region=${AWS_REGION:-eu-central-1}" -var-file=terraform.tfvars
+terraform apply -auto-approve -var "region=${AWS_REGION:-eu-west-1}" -var-file=terraform.tfvars
