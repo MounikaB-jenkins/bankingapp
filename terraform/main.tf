@@ -227,7 +227,7 @@ resource "aws_security_group" "db" {
 }
 
 resource "aws_db_subnet_group" "default" {
-  name       = "bankingapp-db-subnet-group-latest"
+  name       = "bankingapp-db-subnet-group"
   subnet_ids = local.effective_subnet_ids
 }
 
