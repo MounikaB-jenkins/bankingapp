@@ -23,7 +23,7 @@ echo "Created and attached IGW: $IGW_ID"
 # Get available AZs
 AZS=$(aws ec2 describe-availability-zones --region $REGION --query "AvailabilityZones[].ZoneName" --output text)
 
-# Create subnets in each AZ
+# Create subnets in each AZ (minimum 2 for RDS/ALB requirements)
 SUBNET_IDS=()
 AZ_ARRAY=($AZS)
 for i in "${!AZ_ARRAY[@]}"; do
@@ -34,6 +34,12 @@ for i in "${!AZ_ARRAY[@]}"; do
   aws ec2 create-tags --resources $SUBNET_ID --tags Key=Name,Value="${VPC_NAME}-subnet-$((i+1))" --region $REGION
   echo "Created subnet $SUBNET_ID in AZ $AZ"
 done
+
+# Ensure at least 2 subnets for RDS/ALB requirements
+if [ ${#SUBNET_IDS[@]} -lt 2 ]; then
+  echo "ERROR: Need at least 2 subnets in different AZs for RDS and ALB. Only created ${#SUBNET_IDS[@]} subnet(s)."
+  exit 1
+fi
 
 # Create route table with default route to IGW
 RTB_ID=$(aws ec2 create-route-table --vpc-id $VPC_ID --region $REGION --query "RouteTable.RouteTableId" --output text)
@@ -51,13 +57,19 @@ export VPC_ID
 SUBNET_ID=${SUBNET_IDS[0]}
 export SUBNET_ID
 
+# Export all subnet IDs as comma-separated list for Terraform
+SUBNET_IDS_LIST=$(IFS=,; echo "${SUBNET_IDS[*]}")
+export SUBNET_IDS_LIST
+
 # Output environment variables for Jenkins
 echo ""
 echo "=== VPC Configuration for Packer ==="
 echo "VPC_ID=$VPC_ID"
 echo "SUBNET_ID=$SUBNET_ID"
+echo "SUBNET_IDS=$SUBNET_IDS_LIST"
 echo "REGION=$REGION"
 echo ""
 echo "Use these in Jenkins:"
 echo "export VPC_ID=$VPC_ID"
 echo "export SUBNET_ID=$SUBNET_ID"
+echo "export SUBNET_IDS=$SUBNET_IDS_LIST"

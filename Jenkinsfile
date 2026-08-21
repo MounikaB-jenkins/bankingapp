@@ -77,13 +77,17 @@ pipeline {
           CREATE_VPC=$(grep create_vpc terraform/terraform.tfvars | grep -v '^#' | awk -F= '{gsub(/^[ \t]+|[ \t]+$/, "", $2); print $2}')
           if [ "$CREATE_VPC" = "true" ]; then
             source ./scripts/create-default-vpc.sh
+            # Get SUBNET_IDS from the script output (all subnets)
+            SUBNET_IDS=$(echo "$SUBNET_IDS" | tr ',' ' ')
           else
             VPC_ID=$(grep vpc_id terraform/terraform.tfvars | grep -v '^#' | awk -F= '{gsub(/[\" ]/, "", $2); print $2}')
             SUBNET_IDS_RAW=$(grep subnet_ids terraform/terraform.tfvars | grep -v '^#' | awk -F= '{print $2}')
             SUBNET_ID=$(echo "$SUBNET_IDS_RAW" | tr -d '[" ]' | cut -d, -f1)
+            SUBNET_IDS=$(echo "$SUBNET_IDS_RAW" | tr -d '[" ]')
           fi
           echo "VPC_ID=$VPC_ID" > vpc_info.env
           echo "SUBNET_ID=$SUBNET_ID" >> vpc_info.env
+          echo "SUBNET_IDS=$SUBNET_IDS" >> vpc_info.env
         '''
       }
     }
@@ -148,11 +152,22 @@ pipeline {
           terraform destroy -auto-approve -var "region=${AWS_REGION}" || true
           
           # Deploy with create_vpc=false since VPC already exists from Prepare VPC stage
+          # Build HCL list from comma-separated SUBNET_IDS
+          SUBNET_IDS_HCL=""
+          IFS=',' read -ra SUBNET_ARRAY <<< "$SUBNET_IDS"
+          for i in "${!SUBNET_ARRAY[@]}"; do
+            if [ $i -eq 0 ]; then
+              SUBNET_IDS_HCL="\"${SUBNET_ARRAY[$i]}\""
+            else
+              SUBNET_IDS_HCL="$SUBNET_IDS_HCL, \"${SUBNET_ARRAY[$i]}\""
+            fi
+          done
+          
           cat > terraform.tfvars.auto <<EOF
 region = "${AWS_REGION}"
 create_vpc = false
 vpc_id = "$VPC_ID"
-subnet_ids = ["$SUBNET_ID"]
+subnet_ids = [$SUBNET_IDS_HCL]
 flask_ami_id = "$FLASK_AMI"
 monitoring_ami_id = "$MONITORING_AMI"
 EOF
