@@ -75,11 +75,36 @@ pipeline {
         sh '''
           set -e
           set -o pipefail
-          cd packer
+          
+          # Read Terraform config to determine if we need VPC
+          CREATE_VPC=$(grep -E "^\s*create_vpc\s*=" terraform/terraform.tfvars | cut -d"=" -f2 | tr -d " \t\r" | head -1)
+          
+          VPC_ID=""
+          SUBNET_ID=""
+          
+          if [ "$CREATE_VPC" = "true" ]; then
+            # Create VPC and subnets first
+            cd terraform
+            terraform init
+            terraform apply -auto-approve -var "region=${AWS_REGION}" -var="create_vpc=true" -var-file=terraform.tfvars
+            
+            # Extract VPC and Subnet IDs
+            VPC_ID=$(terraform output -raw effective_vpc_id)
+            SUBNET_IDS=$(terraform output -raw effective_subnet_ids | tr -d '\]["' | tr ',' ' ')
+            SUBNET_ID=$(echo $SUBNET_IDS | awk '{print $1}')
+            cd ../packer
+          else
+            # Use existing VPC - must be provided via environment or tfvars
+            VPC_ID=$(grep -E "^\s*vpc_id\s*=" terraform/terraform.tfvars | cut -d"=" -f2 | tr -d " \t\r\"'" | head -1)
+            SUBNET_IDS=$(grep -E "^\s*subnet_ids\s*=" terraform/terraform.tfvars | cut -d"=" -f2 | tr -d " \t\r\"'[]" | tr ',' ' ')
+            SUBNET_ID=$(echo $SUBNET_IDS | awk '{print $1}')
+          fi
+          
+          # Build AMIs with VPC configuration
           packer init flask-app.pkr.hcl
-          packer build -var "region=${AWS_REGION}" flask-app.pkr.hcl | tee flask-build.log
+          packer build -var "region=${AWS_REGION}" -var "vpc_id=${VPC_ID}" -var "subnet_id=${SUBNET_ID}" flask-app.pkr.hcl | tee flask-build.log
           packer init monitoring.pkr.hcl
-          packer build -var "region=${AWS_REGION}" monitoring.pkr.hcl | tee monitoring-build.log
+          packer build -var "region=${AWS_REGION}" -var "vpc_id=${VPC_ID}" -var "subnet_id=${SUBNET_ID}" monitoring.pkr.hcl | tee monitoring-build.log
         '''
       }
     }
