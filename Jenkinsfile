@@ -70,37 +70,84 @@ pipeline {
       }
     }
 
+    stage('Prepare VPC') {
+      steps {
+        sh '''
+          set -e
+          set -o pipefail
+          
+          # Read settings from terraform.tfvars
+          CREATE_VPC=$(grep -E "^[[:space:]]*create_vpc[[:space:]]*=" terraform/terraform.tfvars | cut -d"=" -f2 | tr -d " \t\r" | head -1)
+          
+          if [ "$CREATE_VPC" = "true" ]; then
+            # Create VPC with settings from terraform.tfvars
+            VPC_CIDR=$(grep -E "^[[:space:]]*vpc_cidr[[:space:]]*=" terraform/terraform.tfvars | cut -d"=" -f2 | tr -d " \t\r'" | head -1)
+            SUBNET_CIDRS=$(grep -E "^[[:space:]]*subnet_cidrs[[:space:]]*=" terraform/terraform.tfvars | cut -d"=" -f2 | tr -d " \t\r'[]" | tr ',' ' ')
+            
+            # Create VPC
+            VPC_ID=$(aws ec2 create-vpc --cidr-block ${VPC_CIDR:-10.0.0.0/16} --region ${AWS_REGION} --query "Vpc.VpcId" --output text)
+            aws ec2 create-tags --resources $VPC_ID --tags Key=Name,Value=bankingapp-vpc Key=Project,Value=BankingApp --region ${AWS_REGION}
+            
+            # Enable DNS settings (required for RDS)
+            aws ec2 modify-vpc-attribute --vpc-id $VPC_ID --enable-dns-hostnames '{"Value": true}' --region ${AWS_REGION}
+            aws ec2 modify-vpc-attribute --vpc-id $VPC_ID --enable-dns-support '{"Value": true}' --region ${AWS_REGION}
+            
+            # Create Internet Gateway
+            IGW_ID=$(aws ec2 create-internet-gateway --region ${AWS_REGION} --query "InternetGateway.InternetGatewayId" --output text)
+            aws ec2 attach-internet-gateway --vpc-id $VPC_ID --internet-gateway-id $IGW_ID --region ${AWS_REGION}
+            
+            # Create subnets
+            SUBNET_IDS=()
+            i=0
+            for cidr in $SUBNET_CIDRS; do
+              AZ=$(aws ec2 describe-availability-zones --region ${AWS_REGION} --query "AvailabilityZones[$i].ZoneName" --output text)
+              SUBNET_ID=$(aws ec2 create-subnet --vpc-id $VPC_ID --cidr-block $cidr --availability-zone $AZ --region ${AWS_REGION} --query "Subnet.SubnetId" --output text)
+              SUBNET_IDS+=($SUBNET_ID)
+              aws ec2 create-tags --resources $SUBNET_ID --tags Key=Name,Value="bankingapp-subnet-$((i+1))" Key=Project,Value=BankingApp --region ${AWS_REGION}
+              aws ec2 modify-subnet-attribute --subnet-id $SUBNET_ID --map-public-ip-on-launch --region ${AWS_REGION}
+              ((i++))
+            done
+            
+            # Create route table with default route to IGW
+            RTB_ID=$(aws ec2 create-route-table --vpc-id $VPC_ID --region ${AWS_REGION} --query "RouteTable.RouteTableId" --output text)
+            aws ec2 create-route --route-table-id $RTB_ID --destination-cidr-block 0.0.0.0/0 --gateway-id $IGW_ID --region ${AWS_REGION}
+            
+            # Associate route table with all subnets
+            for SUBNET_ID in "${SUBNET_IDS[@]}"; do
+              aws ec2 associate-route-table --route-table-id $RTB_ID --subnet-id $SUBNET_ID --region ${AWS_REGION}
+            done
+            
+            SUBNET_ID=${SUBNET_IDS[0]}
+            
+          else
+            # Use existing VPC from terraform.tfvars
+            VPC_ID=$(grep -E "^[[:space:]]*vpc_id[[:space:]]*=" terraform/terraform.tfvars | cut -d"=" -f2 | tr -d " \t\r'" | head -1)
+            SUBNET_IDS=$(grep -E "^[[:space:]]*subnet_ids[[:space:]]*=" terraform/terraform.tfvars | cut -d"=" -f2 | tr -d " \t\r'[]" | tr ',' ' ')
+            SUBNET_ID=$(echo $SUBNET_IDS | awk '{print $1}')
+          fi
+          
+          # Save for subsequent stages
+          echo "VPC_ID=$VPC_ID" > vpc_info.env
+          echo "SUBNET_ID=$SUBNET_ID" >> vpc_info.env
+        '''
+      }
+    }
+
     stage('Build AMIs') {
       steps {
         sh '''
           set -e
           set -o pipefail
           
-          # Read Terraform config to determine if we need VPC
-          CREATE_VPC=$(grep -E "^[[:space:]]*create_vpc[[:space:]]*=" terraform/terraform.tfvars | cut -d"=" -f2 | tr -d " \t\r" | head -1)
+          # Load VPC info from previous stage
+          source vpc_info.env
           
-          VPC_ID=""
-          SUBNET_ID=""
-          
-          if [ "$CREATE_VPC" = "true" ]; then
-            # Create VPC and subnets first
-            cd terraform
-            terraform init
-            terraform apply -auto-approve -var "region=${AWS_REGION}" -var="create_vpc=true" -var-file=terraform.tfvars
-            
-            # Extract VPC and Subnet IDs
-            VPC_ID=$(terraform output -raw effective_vpc_id)
-            SUBNET_IDS=$(terraform output -raw effective_subnet_ids | tr -d '[]"' | tr ',' ' ')
-            SUBNET_ID=$(echo $SUBNET_IDS | awk '{print $1}')
-            cd ../packer
-          else
-            # Use existing VPC - must be provided via environment or tfvars
-            VPC_ID=$(grep -E "^[[:space:]]*vpc_id[[:space:]]*=" terraform/terraform.tfvars | cut -d"=" -f2 | tr -d " \t\r'" | head -1)
-            SUBNET_IDS=$(grep -E "^[[:space:]]*subnet_ids[[:space:]]*=" terraform/terraform.tfvars | cut -d"=" -f2 | tr -d " \t\r'[]" | tr ',' ' ')
-            SUBNET_ID=$(echo $SUBNET_IDS | awk '{print $1}')
+          if [ -z "$VPC_ID" ] || [ -z "$SUBNET_ID" ]; then
+            echo "ERROR: VPC_ID and SUBNET_ID not found. Prepare VPC stage failed."
+            exit 1
           fi
           
-          # Build AMIs with VPC configuration
+          cd packer
           packer init flask-app.pkr.hcl
           packer build -var "region=${AWS_REGION}" -var "vpc_id=${VPC_ID}" -var "subnet_id=${SUBNET_ID}" flask-app.pkr.hcl | tee flask-build.log
           packer init monitoring.pkr.hcl
@@ -137,9 +184,17 @@ pipeline {
           set -e
           cd terraform
           terraform init
+          
+          # Load VPC info and AMI IDs
+          source ../vpc_info.env
           source ../ami_ids.env
+          
+          # Deploy with create_vpc=false since VPC already exists from Prepare VPC stage
           terraform apply -auto-approve \
             -var "region=${AWS_REGION}" \
+            -var "create_vpc=false" \
+            -var "vpc_id=$VPC_ID" \
+            -var "subnet_ids=[$SUBNET_ID]" \
             -var "flask_ami_id=$FLASK_AMI" \
             -var "monitoring_ami_id=$MONITORING_AMI"
         '''
