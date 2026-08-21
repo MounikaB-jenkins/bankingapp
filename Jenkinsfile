@@ -90,13 +90,13 @@ pipeline {
             
             # Extract VPC and Subnet IDs
             VPC_ID=$(terraform output -raw effective_vpc_id)
-            SUBNET_IDS=$(terraform output -raw effective_subnet_ids | tr -d '\]["' | tr ',' ' ')
+            SUBNET_IDS=$(terraform output -raw effective_subnet_ids | tr -d '[]"' | tr ',' ' ')
             SUBNET_ID=$(echo $SUBNET_IDS | awk '{print $1}')
             cd ../packer
           else
             # Use existing VPC - must be provided via environment or tfvars
-            VPC_ID=$(grep -E "^[[:space:]]*vpc_id[[:space:]]*=" terraform/terraform.tfvars | cut -d"=" -f2 | tr -d " \t\r\"'" | head -1)
-            SUBNET_IDS=$(grep -E "^[[:space:]]*subnet_ids[[:space:]]*=" terraform/terraform.tfvars | cut -d"=" -f2 | tr -d " \t\r\"'[]" | tr ',' ' ')
+            VPC_ID=$(grep -E "^[[:space:]]*vpc_id[[:space:]]*=" terraform/terraform.tfvars | cut -d"=" -f2 | tr -d " \t\r'" | head -1)
+            SUBNET_IDS=$(grep -E "^[[:space:]]*subnet_ids[[:space:]]*=" terraform/terraform.tfvars | cut -d"=" -f2 | tr -d " \t\r'[]" | tr ',' ' ')
             SUBNET_ID=$(echo $SUBNET_IDS | awk '{print $1}')
           fi
           
