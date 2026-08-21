@@ -54,10 +54,11 @@ done
 
 # Export variables for parent shell to use
 export VPC_ID
+export SUBNET_IDS
 SUBNET_ID=${SUBNET_IDS[0]}
 export SUBNET_ID
 
-# Export all subnet IDs as comma-separated list for Terraform
+# Also export as SUBNET_IDS for backward compatibility
 SUBNET_IDS_LIST=$(IFS=,; echo "${SUBNET_IDS[*]}")
 export SUBNET_IDS_LIST
 

@@ -78,7 +78,7 @@ pipeline {
           if [ "$CREATE_VPC" = "true" ]; then
             source ./scripts/create-default-vpc.sh
             # Get SUBNET_IDS from the script output (all subnets)
-            SUBNET_IDS=$(echo "$SUBNET_IDS" | tr ',' ' ')
+            SUBNET_IDS=$(IFS=' '; echo "${SUBNET_IDS[*]}")
           else
             VPC_ID=$(grep vpc_id terraform/terraform.tfvars | grep -v '^#' | awk -F= '{gsub(/[\" ]/, "", $2); print $2}')
             SUBNET_IDS_RAW=$(grep subnet_ids terraform/terraform.tfvars | grep -v '^#' | awk -F= '{print $2}')
