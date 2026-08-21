@@ -145,13 +145,15 @@ pipeline {
           source ../ami_ids.env
           
           # Deploy with create_vpc=false since VPC already exists from Prepare VPC stage
-          terraform apply -auto-approve \
-            -var "region=${AWS_REGION}" \
-            -var "create_vpc=false" \
-            -var "vpc_id=$VPC_ID" \
-            -var "subnet_ids=[\"$SUBNET_ID\"]" \
-            -var "flask_ami_id=$FLASK_AMI" \
-            -var "monitoring_ami_id=$MONITORING_AMI"
+          cat > terraform.tfvars.auto <<EOF
+region = "${AWS_REGION}"
+create_vpc = false
+vpc_id = "$VPC_ID"
+subnet_ids = ["$SUBNET_ID"]
+flask_ami_id = "$FLASK_AMI"
+monitoring_ami_id = "$MONITORING_AMI"
+EOF
+          terraform apply -auto-approve -var-file=terraform.tfvars.auto
         '''
       }
       post {
