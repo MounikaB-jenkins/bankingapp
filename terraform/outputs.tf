@@ -38,3 +38,14 @@ output "node_exporter_port" {
   description = "Node Exporter port for metrics scraping"
   value       = 9100
 }
+
+# VPC outputs for Packer integration
+output "effective_vpc_id" {
+  description = "The VPC ID used by the infrastructure"
+  value       = local.effective_vpc_id
+}
+
+output "effective_subnet_ids" {
+  description = "The subnet IDs used by the infrastructure"
+  value       = local.effective_subnet_ids
+}

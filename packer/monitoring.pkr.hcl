@@ -3,10 +3,22 @@ variable "region" {
   default = "eu-west-1"
 }
 
+variable "vpc_id" {
+  type    = string
+  default = ""
+}
+
+variable "subnet_id" {
+  type    = string
+  default = ""
+}
+
 source "amazon-ebs" "monitoring" {
   ami_name      = "bankingapp-monitoring-{{timestamp}}"
   instance_type = "t3.micro"
   region        = var.region
+  vpc_id        = var.vpc_id
+  subnet_id     = var.subnet_id
   source_ami_filter {
     filters = {
       name                = "amzn2-ami-hvm-*-x86_64-gp2"
