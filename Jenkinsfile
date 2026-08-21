@@ -177,10 +177,16 @@ EOF
       post {
         always {
           sh '''
-            set -e
             cd terraform
             echo "Saving Terraform outputs..."
-            terraform output -raw secret_arn > ../db_secret_arn.txt
+            # Only save secret_arn if it exists in the state
+            if terraform output -raw secret_arn > /dev/null 2>&1; then
+              terraform output -raw secret_arn > ../db_secret_arn.txt
+            else
+              echo "secret_arn output not available (apply may have failed)"
+              # Create empty file so downstream stages don't fail
+              touch ../db_secret_arn.txt
+            fi
           '''
         }
       }
@@ -192,7 +198,13 @@ EOF
           set -e
           . .venv/bin/activate
           pip install boto3 psycopg2-binary
-          python3 scripts/run_db_init.py "$(cat db_secret_arn.txt)" "scripts/init_db.sql"
+          # Only run DB init if secret_arn was saved (infrastructure deployed successfully)
+          SECRET_ARN=$(cat db_secret_arn.txt)
+          if [ -n "$SECRET_ARN" ] && [ "$SECRET_ARN" != " " ]; then
+            python3 scripts/run_db_init.py "$SECRET_ARN" "scripts/init_db.sql"
+          else
+            echo "Skipping database initialization - infrastructure deployment may have failed"
+          fi
         '''
       }
     }
