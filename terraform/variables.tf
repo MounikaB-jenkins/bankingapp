@@ -25,7 +25,7 @@ variable "subnet_ids" {
 variable "create_vpc" {
   description = "When true, Terraform will create a new VPC and subnets instead of using existing ones"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "vpc_cidr" {
